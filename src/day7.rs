@@ -10,9 +10,16 @@ use nom::{
 pub fn day7(input_path: &str) {
     let input = std::fs::read_to_string(input_path).expect("Can't find input file");
     //Part 1
-    println!("Total size of directories below size {} is {}",MAX_SIZE, do_day7_part1(&input));
+    println!(
+        "Total size of directories below size {} is {}",
+        MAX_SIZE,
+        do_day7_part1(&input)
+    );
     //Part 2
-    println!("The size of the directory to delete for part 2 is {}", do_day7_part2(&input));
+    println!(
+        "The size of the directory to delete for part 2 is {}",
+        do_day7_part2(&input)
+    );
 }
 
 fn do_day7_part1(input: &str) -> u64 {
@@ -25,13 +32,13 @@ fn do_day7_part1(input: &str) -> u64 {
 
 fn do_day7_part2(input: &str) -> u64 {
     let mut lines = input
-    .lines()
-    .map(|line| all_consuming(parse_line)(line).finish().unwrap().1);
+        .lines()
+        .map(|line| all_consuming(parse_line)(line).finish().unwrap().1);
 
-let root_dir = get_data(&mut lines, String::from("root"));
-let free_space = 70000000-root_dir.total_size;
-let to_delete = 30000000-free_space;
-get_dir_to_delete(&root_dir, to_delete)
+    let root_dir = get_data(&mut lines, String::from("root"));
+    let free_space = 70000000 - root_dir.total_size;
+    let to_delete = 30000000 - free_space;
+    get_size_to_delete(&root_dir, to_delete)
 }
 
 fn get_data(lines: &mut impl Iterator<Item = Line>, name: String) -> Dir {
@@ -64,28 +71,26 @@ fn get_data(lines: &mut impl Iterator<Item = Line>, name: String) -> Dir {
     dir
 }
 
-const MAX_SIZE:u64 = 100000;
+const MAX_SIZE: u64 = 100000;
 fn get_size(dir: &Dir) -> u64 {
-    let size = if dir.total_size <= MAX_SIZE {    //Only sum those under 100000 in size
+    let size = if dir.total_size <= MAX_SIZE {
+        //Only sum those under 100000 in size
         dir.total_size
     } else {
         0
     };
-    
-    size + dir
-        .directories
-        .iter()
-        .map(|d| get_size(d))
-        .sum::<u64>() 
+
+    size + dir.directories.iter().map(|d| get_size(d)).sum::<u64>()
 }
 
-fn get_dir_to_delete(dir: &Dir, value: u64)->u64{
-    
-    dir
-        .directories
-        .iter().map(|d|get_dir_to_delete(&d, value))
-        .filter(|s|s>&value).min().map_or(dir.total_size, |s|s)
-}   
+fn get_size_to_delete(dir: &Dir, value: u64) -> u64 {
+    dir.directories
+        .iter()
+        .map(|d| get_size_to_delete(&d, value))
+        .filter(|s| s > &value)
+        .min()
+        .map_or(dir.total_size, |s| s)
+}
 
 #[derive(Debug)]
 enum Line {
