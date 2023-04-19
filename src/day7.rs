@@ -80,13 +80,13 @@ fn get_size(dir: &Dir) -> u64 {
         0
     };
 
-    size + dir.directories.iter().map(|d| get_size(d)).sum::<u64>()
+    size + dir.directories.iter().map(get_size).sum::<u64>()
 }
 
 fn get_size_to_delete(dir: &Dir, value: u64) -> u64 {
     dir.directories
         .iter()
-        .map(|d| get_size_to_delete(&d, value))
+        .map(|d| get_size_to_delete(d, value))
         .filter(|s| s > &value)
         .min()
         .map_or(dir.total_size, |s| s)
