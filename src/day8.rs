@@ -87,7 +87,7 @@ fn do_day8_part2(input: &str) -> u32 {
     let columns: Vec<Vec<u32>> = (1..nx - 1)
         .map(|i| matrix.iter().skip(i).step_by(nx).map(|n| *n).collect())
         .collect();
-    
+
     for j in 1..ny - 1 {
         let row = &matrix[j * nx..j * nx + nx];
         for i in 1..nx - 1 {
