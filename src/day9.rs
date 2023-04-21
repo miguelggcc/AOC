@@ -6,8 +6,8 @@ pub fn day9(input_path: &str) {
     //Part 1
     println!("Number of pos. visited: {}", do_day9_part1(&input));
     //Part 2
-    println!("Part 2, number of pos. visited: {}", do_day9_part2(&input));
-    println!("{:?}", time.elapsed());
+println!("Part 2, number of pos. visited: {}", do_day9_part2(&input));
+        println!("{:?}", time.elapsed());
 }
 
 fn do_day9_part1(input: &str) -> u32 {
@@ -15,7 +15,8 @@ fn do_day9_part1(input: &str) -> u32 {
     let mut tail = Vec2::new(0, 0);
     let mut visited = HashSet::new();
 
-    input.lines().for_each(|l| {
+    input.lines().for_each(|l| {    
+
         let (dir, d) = match l.split_whitespace().collect::<Vec<_>>()[..] {
             ["R", d] => (Vec2::new(1, 0), d),
             ["L", d] => (Vec2::new(-1, 0), d),
@@ -23,6 +24,7 @@ fn do_day9_part1(input: &str) -> u32 {
             ["U", d] => (Vec2::new(0, 1), d),
             _ => unreachable!(),
         };
+
         for _ in 0..d.parse::<usize>().unwrap() {
             head.move_in_dir(&dir);
             follow_head_mut(&mut tail, &head);
@@ -40,10 +42,10 @@ fn follow_head_mut(tail: &mut Vec2<i32>, head: &Vec2<i32>) {
         tail.x += dx.signum();
         tail.y += dy.signum();
     } else {
-        if dx.abs() >= 2 {
+        if dx.abs() > 1 {
             tail.x += dx.signum();
         }
-        if dy.abs() >= 2 {
+        if dy.abs() > 1 {
             tail.y += dy.signum();
         }
     }
@@ -53,16 +55,9 @@ fn follow_head(tail: &Vec2<i32>, head: &Vec2<i32>) -> Vec2<i32> {
     let dy = head.y - tail.y;
     let mut output = Vec2::new(tail.x, tail.y);
 
-    if dx.abs() + dy.abs() > 2 {
+    if dx.abs().max(dy.abs()) > 1 {
         output.x += dx.signum();
         output.y += dy.signum();
-    } else {
-        if dx.abs() >= 2 {
-            output.x += dx.signum();
-        }
-        if dy.abs() >= 2 {
-            output.y += dy.signum();
-        }
     }
     output
 }

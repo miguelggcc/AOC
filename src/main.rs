@@ -7,6 +7,7 @@ use day6::day6;
 use day7::day7;
 use day8::day8;
 use day9::day9;
+use day10::day10;
 mod day1;
 mod day2;
 mod day3;
@@ -16,6 +17,7 @@ mod day6;
 mod day7;
 mod day8;
 mod day9;
+mod day10;
 
 const DAY: u32 = 9;
 
@@ -30,6 +32,7 @@ fn main() {
         7 => day7("inputs/input_day7.txt"),
         8 => day8("inputs/input_day8.txt"),
         9 => day9("inputs/input_day9.txt"),
+        10 => day10("inputs/input_day10.txt"),
         _ => unreachable!(),
     }
 }
