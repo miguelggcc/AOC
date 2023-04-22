@@ -1,46 +1,95 @@
 use std::time::Instant;
 
-use nom::{branch::alt, IResult, combinator::{map, all_consuming}, bytes::complete::tag, character::complete, sequence::preceded, Finish};
+use nom::{
+    branch::alt,
+    bytes::complete::tag,
+    character::complete,
+    combinator::{all_consuming, map},
+    sequence::preceded,
+    Finish, IResult,
+};
 
 pub fn day10(input_path: &str) {
     let input = std::fs::read_to_string(input_path).expect("Can't read input file");
     let time = Instant::now();
     //Part 1
-    println!("Number of pos. visited: {}", do_day10_part1(&input));
+    println!("Sum of signal strengths: {}", do_day10_part1(&input));
     //Part 2
-//println!("Part 2, number of pos. visited: {}", do_day10_part2(&input));
-println!("{:?}", time.elapsed());
+    println!("{}", do_day10_part2(&input));
+    println!("{:?}", time.elapsed());
 }
 
-fn do_day10_part1(input: &str)->u32{
+fn do_day10_part1(input: &str) -> i32 {
     let lines = input
-    .lines()
-    .map(|line| all_consuming(parse_line)(line).finish().unwrap().1);
-    for l in lines{
-        dbg!(l);
+        .lines()
+        .map(|line| all_consuming(parse_line)(line).finish().unwrap().1);
+    let mut x = vec![1];
+    for l in lines {
+        match l {
+            Command::Noop => x.push(*x.last().unwrap()),
+            Command::Addx(a) => {
+                x.push(*x.last().unwrap());
+                x.push(x.last().unwrap() + a);
+            }
+        }
     }
-0
+    x.iter()
+        .skip(20 - 1)
+        .step_by(40)
+        .enumerate()
+        .fold(0, |acc, (i, x)| acc + (i as i32 * 40 + 20) * x)
 }
 
-fn parse_line(input: &str)->IResult<&str, Command>{
-    alt((map(tag("noop"), |_: &str|Command::Noop), 
-        map(preceded(tag("addx "), complete::i32), |a: i32|Command::Addx(a))))(input)
+fn do_day10_part2(input: &str) -> String {
+    let lines = input
+        .lines()
+        .map(|line| all_consuming(parse_line)(line).finish().unwrap().1);
+    let mut x_vec = vec![1];
+    for l in lines {
+        match l {
+            Command::Noop => x_vec.push(*x_vec.last().unwrap()),
+            Command::Addx(a) => {
+                x_vec.push(*x_vec.last().unwrap());
+                x_vec.push(x_vec.last().unwrap() + a);
+            }
+        }
+    }
+    x_vec.pop();
+    x_vec
+        .chunks(40)
+        .map(|xl| {
+            let mut line = xl
+                .iter()
+                .enumerate()
+                .map(|(i, x)| if (i as i32 - x).abs() < 2 { '#' } else { '.' })
+                .collect::<String>();
+            line.push_str("\n");
+            line
+        })
+        .collect()
+}
+
+fn parse_line(input: &str) -> IResult<&str, Command> {
+    alt((
+        map(tag("noop"), |_| Command::Noop),
+        map(preceded(tag("addx "), complete::i32), |a: i32| {
+            Command::Addx(a)
+        }),
+    ))(input)
 }
 
 #[derive(Debug)]
-enum Command{
+enum Command {
     Noop,
-    Addx(i32)
+    Addx(i32),
 }
 
 #[cfg(test)]
 mod tests {
 
     use super::do_day10_part1;
-
-    #[test]
-    fn part_1() {
-let input = "addx 15
+    use super::do_day10_part2;
+    const INPUT: &str = "addx 15
 addx -11
 addx 6
 addx -3
@@ -187,6 +236,22 @@ noop
 noop
 noop";
 
-assert_eq!(do_day10_part1(input), 13);
+    #[test]
+    fn part_1() {
+        assert_eq!(do_day10_part1(INPUT), 13140);
+    }
+    #[test]
+    fn part_2() {
+        assert_eq!(
+            do_day10_part2(INPUT),
+            "##..##..##..##..##..##..##..##..##..##..
+###...###...###...###...###...###...###.
+####....####....####....####....####....
+#####.....#####.....#####.....#####.....
+######......######......######......####
+#######.......#######.......#######.....
+"
+            .to_string()
+        );
     }
 }

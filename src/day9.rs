@@ -6,8 +6,8 @@ pub fn day9(input_path: &str) {
     //Part 1
     println!("Number of pos. visited: {}", do_day9_part1(&input));
     //Part 2
-println!("Part 2, number of pos. visited: {}", do_day9_part2(&input));
-        println!("{:?}", time.elapsed());
+    println!("Part 2, number of pos. visited: {}", do_day9_part2(&input));
+    println!("{:?}", time.elapsed());
 }
 
 fn do_day9_part1(input: &str) -> u32 {
@@ -15,8 +15,7 @@ fn do_day9_part1(input: &str) -> u32 {
     let mut tail = Vec2::new(0, 0);
     let mut visited = HashSet::new();
 
-    input.lines().for_each(|l| {    
-
+    input.lines().for_each(|l| {
         let (dir, d) = match l.split_whitespace().collect::<Vec<_>>()[..] {
             ["R", d] => (Vec2::new(1, 0), d),
             ["L", d] => (Vec2::new(-1, 0), d),
