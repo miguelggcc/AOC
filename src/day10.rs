@@ -63,7 +63,7 @@ fn do_day10_part2(input: &str) -> String {
                 .enumerate()
                 .map(|(i, x)| if (i as i32 - x).abs() < 2 { '#' } else { '.' })
                 .collect::<String>();
-            line.push_str("\n");
+            line.push('\n');
             line
         })
         .collect()

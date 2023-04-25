@@ -36,7 +36,7 @@ fn do_day11_part1(input: &str) -> u64 {
                 let monkey = monkeys.get_mut(i).unwrap();
                 monkey.times_inspected += 1;
                 let mut item = monkey.operation.operate(item);
-                item = item / 3;
+                item /= 3;
                 let throw_to = if item % monkey.test_divisible == 0 {
                     monkey.throw_to_if_true
                 } else {

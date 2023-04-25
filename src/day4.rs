@@ -20,13 +20,10 @@ fn do_day4_part1(input: &str) -> u32 {
                 .map(|x| x.parse::<u32>().unwrap())
                 .collect();
 
-            if (values_left[0] >= values_right[0] && values_left[1] <= values_right[1])
-                || (values_right[0] >= values_left[0] && values_right[1] <= values_left[1])
-            {
-                1
-            } else {
-                0
-            }
+            u32::from(
+                (values_left[0] >= values_right[0] && values_left[1] <= values_right[1])
+                    || (values_right[0] >= values_left[0] && values_right[1] <= values_left[1]),
+            )
         })
         .sum()
 }
@@ -45,13 +42,10 @@ fn do_day4_part2(input: &str) -> u32 {
                 .map(|x| x.parse::<u32>().unwrap())
                 .collect();
 
-            if (values_left[0] >= values_right[0] && values_left[0] <= values_right[1])
-                || (values_right[0] >= values_left[0] && values_right[0] <= values_left[1])
-            {
-                1
-            } else {
-                0
-            }
+            u32::from(
+                (values_left[0] >= values_right[0] && values_left[0] <= values_right[1])
+                    || (values_right[0] >= values_left[0] && values_right[0] <= values_left[1]),
+            )
         })
         .sum()
 }

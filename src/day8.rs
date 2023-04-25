@@ -85,7 +85,7 @@ fn do_day8_part2(input: &str) -> u32 {
     let mut max_total = 0;
 
     let columns: Vec<Vec<u32>> = (1..nx - 1)
-        .map(|i| matrix.iter().skip(i).step_by(nx).map(|n| *n).collect())
+        .map(|i| matrix.iter().skip(i).step_by(nx).copied().collect())
         .collect();
 
     for j in 1..ny - 1 {
@@ -93,7 +93,7 @@ fn do_day8_part2(input: &str) -> u32 {
         for i in 1..nx - 1 {
             let n = &matrix[ix(i, j, nx)];
             max_total = max_total
-                .max(get_scenic_score(n, &row, i) * get_scenic_score(n, &columns[i - 1], j));
+                .max(get_scenic_score(n, row, i) * get_scenic_score(n, &columns[i - 1], j));
         }
     }
     max_total
