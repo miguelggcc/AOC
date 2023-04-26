@@ -48,23 +48,19 @@ fn do_day13_part2(input: &str) -> u32 {
     .unwrap()
     .1;
 
-    let list_two = List::L(vec![List::L(vec![List::I(2)])]);
-    lists.push(list_two.clone());
-    let list_six = List::L(vec![List::L(vec![List::I(6)])]);
-    lists.push(list_six.clone());
+    let additions = vec![
+        List::L(vec![List::L(vec![List::I(2)])]),
+        List::L(vec![List::L(vec![List::I(6)])]),
+    ];
+    lists.extend(additions.clone());
 
     lists.sort_by(|l1, l2| l1.partial_cmp(l2).unwrap());
 
-    (lists
+    additions
         .iter()
-        .position(|l| l == &list_two)
-        .map(|p| p + 1)
-        .expect("Couldn't find [[2]]")
-        * lists
-            .iter()
-            .position(|l| *l == list_six)
-            .map(|p| p + 1)
-            .expect("Couldn't find [[6]]")) as u32
+        .map(|addition| lists.iter().position(|l| l == addition))
+        .map(|p| p.unwrap() as u32 + 1)
+        .product()
 }
 
 impl PartialOrd for List {
