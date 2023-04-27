@@ -29,15 +29,16 @@ fn do_day14_part1(input: &str) -> u32 {
     parsed_points.for_each(|row: Vec<Point>| {
         rock_points.push(*row.first().unwrap());
         row.windows(2)
-            .for_each(|ptouple| rock_points.extend(ptouple[0].interpolate_points(&ptouple[1])))
+            .for_each(|points| rock_points.extend(points[0].interpolate_points(&points[1])))
     });
 
     let mut grid = Grid::build(&rock_points);
 
     let mut total = 0;
+    let mut path = vec![grid.sand_spawn];
 
-    while let Some(point) = grid.calculate_falling_sand(&grid.sand_spawn) {
-        grid.new_fallen_sand(point);
+    while let Some(output_point) = grid.calculate_falling_sand(&mut path) {
+        grid.new_fallen_sand(output_point);
         total += 1;
     }
     //println!("{grid}");
@@ -54,17 +55,17 @@ fn do_day14_part2(input: &str) -> u32 {
     parsed_points.for_each(|row: Vec<Point>| {
         rock_points.push(*row.first().unwrap());
         row.windows(2)
-            .for_each(|ptouple| rock_points.extend(ptouple[0].interpolate_points(&ptouple[1])))
+            .for_each(|ptuple| rock_points.extend(ptuple[0].interpolate_points(&ptuple[1])))
     });
 
     let mut grid = Grid::build_part2(&rock_points);
 
     let mut total = 0;
-
-    while let Some(point) = grid.calculate_falling_sand(&grid.sand_spawn) {
-        grid.new_fallen_sand(point);
+    let mut path = vec![grid.sand_spawn];
+    while let Some(output_point) = grid.calculate_falling_sand(&mut path) {
+        grid.new_fallen_sand(output_point);
         total += 1;
-        if point == grid.sand_spawn {
+        if output_point == grid.sand_spawn {
             break;
         }
     }
@@ -110,13 +111,9 @@ impl Grid {
     }
 
     fn build_part2(rock_points: &[Point]) -> Self {
-        let max_y= rock_points
-            .iter()
-            .fold(0, |max_y, p| {
-                max_y.max(p.y)
-            });
+        let max_y = rock_points.iter().fold(0, |max_y, p| max_y.max(p.y));
 
-        let padding = (max_y + 2) * 100 / 87; //Approximately a piramid
+        let padding = (max_y + 1) * 2; //45º slope
 
         let min_x = 500 - padding;
         let max_x = 500 + padding;
@@ -144,28 +141,27 @@ impl Grid {
         }
     }
 
-    fn calculate_falling_sand(&self, starting_point: &Point) -> Option<Point> {
-        let mut starting_point = *starting_point;
-        let mut tests = [Point::new(0,0);3];
-        
-       fn get_tests(tests: &mut [Point;3],starting_point: &Point){ 
-        let new_y = starting_point.y + 1;
-        tests[0].x = starting_point.x;
-        tests[0].y = new_y;
-        tests[1].x = starting_point.x-1;
-        tests[1].y = new_y;
-        tests[2].x = starting_point.x+1;
-        tests[2].y = new_y;
-       }
+    fn calculate_falling_sand(&self, path: &mut Vec<Point>) -> Option<Point> {
+        let mut tests = [Point::new(0, 0); 3];
+
+        fn get_tests(tests: &mut [Point; 3], starting_point: &Point) {
+            let new_y = starting_point.y + 1;
+            tests[0].x = starting_point.x;
+            tests[0].y = new_y;
+            tests[1].x = starting_point.x - 1;
+            tests[1].y = new_y;
+            tests[2].x = starting_point.x + 1;
+            tests[2].y = new_y;
+        }
         'outer: loop {
-            get_tests(&mut tests,&starting_point);
+            get_tests(&mut tests, path.last().expect("Vector is length 0"));
             'inner: for p in tests {
                 match self.get(&p) {
                     Some(m) => {
                         if m.is_solid() {
                             continue 'inner;
                         } else {
-                            starting_point=p;
+                            path.push(p);
                             continue 'outer;
                         }
                     }
@@ -174,7 +170,7 @@ impl Grid {
             }
             break 'outer;
         }
-        Some(starting_point)
+        Some(path.pop().expect("Vector is length 0"))
     }
 
     fn new_fallen_sand(&mut self, sand_point: Point) {
@@ -237,7 +233,7 @@ impl Point {
                 .map(|dx| Point::new(self.x + delta_x.signum() * dx, self.y))
                 .collect()
         } else {
-             (1..delta_y.abs() + 1)
+            (1..delta_y.abs() + 1)
                 .map(|dy| Point::new(self.x, self.y + delta_y.signum() * dy))
                 .collect()
         }
