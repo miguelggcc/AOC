@@ -1,11 +1,10 @@
-use std::time::Instant;
+use std::{collections::HashSet, ops::Range, time::Instant};
 
 use nom::{
     bytes::complete::tag,
     character::complete,
     combinator::{all_consuming, map},
-    multi::separated_list1,
-    sequence::{preceded, separated_pair, tuple},
+    sequence::{preceded, separated_pair},
     Finish, IResult,
 };
 
@@ -13,92 +12,97 @@ pub fn day15(input_path: &str) {
     let input = std::fs::read_to_string(input_path).expect("Can't read input file");
     let time = Instant::now();
     //Part 1
-    println!("pos that cannot contain a beacon: {}", do_15_part1(&input));
+    println!(
+        "pos that cannot contain a beacon: {}",
+        do_15_part1(&input, 2000000)
+    );
     //Part 2
-    //println!("Part 2, decoder key: {}", do_15_part2(&input));
+    println!("Part 2, decoder key: {}", do_15_part2(&input, 4000000));
 
     println!("{:?}", time.elapsed());
 }
 
-fn do_15_part1(input: &str) -> usize {
+#[inline(never)]
+fn do_15_part1(input: &str, y: i32) -> usize {
     let pairs = input
         .lines()
         .map(|line| all_consuming(parse_line)(line).finish().unwrap().1);
-    let (x_min, x_max, y_min, y_max) = pairs.clone().fold(
-        (i32::MAX, i32::MIN, i32::MAX, i32::MIN),
-        |(x_min, x_max, y_min, y_max), (sensor, beacon)| {
-            (
-                x_min.min(sensor.x).min(beacon.x),
-                x_max.max(sensor.x).max(beacon.x),
-                y_min.min(sensor.y).min(beacon.y),
-                y_max.max(sensor.y).max(beacon.y),
-            )
-        },
-    );
-    let (sensors, beacons): (Vec<_>, Vec<_>) =
-        pairs.map(|(sensor, beacon)| (sensor, beacon)).unzip();
-    let y = 2000000;
-    (x_min - 2000000..x_max + 2000000)
-        .filter(|x| {
-            let p = Point::new(*x, y);
-            sensors.iter().zip(&beacons).any(|(s, b)| {
-                (s.manhattan_distance(&p) <= s.manhattan_distance(b)) ^ (&p == s || &p == b)
-            })
-        })
-        .count()
-}
 
-/*fn do_15_part2(input: &str) -> i32 {
+    let mut forbidden_xs = HashSet::new();
 
-}*/
-
-struct Grid {
-    data: Vec<Device>,
-    nx: usize,
-    ny: usize,
-}
-
-impl Grid {
-    /*fn build(rock_points: &[Point]) -> Self {
-
-    } */
-}
-
-#[derive(Clone, Copy)]
-enum Device {
-    Sensor,
-    Beacon,
-    Air,
-}
-
-/*impl fmt::Display for Grid {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for j in 0..self.ny {
-            for i in 0..self.nx {
-                let c = match self.data[i + j * self.nx] {
-                    Material::Rock => '#',
-                    Material::Air => '.',
-                    Material::Sand => 'o',
-                };
-                write!(f, "{c}")?;
+    let mut ranges = pairs
+        .map(|(s, b)| {
+            if b.y == y {
+                forbidden_xs.insert(b.x);
             }
-            writeln!(f)?;
-        }
-        Ok(())
-    }
-}*/
+            let distance = s.manhattan_distance(&b);
+            let width_in_line = distance - (s.y - y).abs();
+            s.x - width_in_line..s.x + width_in_line + 1
+        })
+        .collect::<Vec<_>>();
 
-#[derive(Debug, PartialEq)]
+    ranges.sort_by_key(|r| r.start);
+
+    let mut merged = vec![];
+    for r in ranges {
+        if merged.is_empty() || !overlaps(&r, merged.last().unwrap()) {
+            merged.push(r);
+        } else {
+            let last = merged.pop().unwrap();
+            merged.push(last.start..r.end.max(last.end));
+        }
+    }
+    merged.into_iter().fold(0, |acc, r| acc + r.len()) - forbidden_xs.len()
+}
+
+fn do_15_part2(input: &str, max_coord: usize) -> u64 {
+    let pairs = input
+        .lines()
+        .map(|line| all_consuming(parse_line)(line).finish().unwrap().1);
+
+    let (mut sensors, beacons): (Vec<_>, Vec<_>) = pairs.clone().unzip();
+
+    let distances: Vec<_> = pairs.map(|(s, b)| s.manhattan_distance(&b)).collect();
+
+    for y in 0..max_coord as i32 {
+        let mut ranges = sensors
+            .iter()
+            .zip(&distances)
+            .map(|(s, d)| {
+                let width_in_line = d - (s.y - y).abs();
+                s.x - width_in_line..s.x + width_in_line + 1
+            })
+            .filter(|r| !r.is_empty())
+            .collect::<Vec<_>>();
+
+        ranges.sort_by_key(|r| r.start);
+        let (merged, splited_range) = ranges.split_first_mut().unwrap();
+        for r in splited_range {
+            if overlaps(&r, &merged) {
+                merged.end = r.end.max(merged.end);
+            } else {
+                if !beacons.contains(&Point { x: merged.end, y }) {
+                    return 4000000 * merged.end as u64 + y as u64;
+                }
+            }
+        }
+    }
+    panic!("couldn't find beacon")
+}
+fn overlaps<T>(a: &Range<T>, b: &Range<T>) -> bool
+where
+    T: PartialOrd,
+{
+    a.start <= b.end && b.start <= a.end
+}
+
+#[derive(Debug, Hash, Eq, PartialEq)]
 struct Point {
     x: i32,
     y: i32,
 }
 
 impl Point {
-    fn new(x: i32, y: i32) -> Self {
-        Self { x, y }
-    }
-
     fn manhattan_distance(&self, other: &Point) -> i32 {
         (other.x - self.x).abs() + (other.y - self.y).abs()
     }
@@ -122,7 +126,7 @@ fn parse_point(input: &str) -> IResult<&str, Point> {
 mod tests {
 
     use super::do_15_part1;
-    //use super::do_15_part2;
+    use super::do_15_part2;
 
     #[test]
     fn part_1() {
@@ -141,7 +145,7 @@ Sensor at x=16, y=7: closest beacon is at x=15, y=3
 Sensor at x=14, y=3: closest beacon is at x=15, y=3
 Sensor at x=20, y=1: closest beacon is at x=15, y=3";
 
-        assert_eq!(do_15_part1(input), 26);
-        //assert_eq!(do_15_part2(input), 93)
+        assert_eq!(do_15_part1(input, 10), 26);
+        assert_eq!(do_15_part2(input, 20), 56000011)
     }
 }
