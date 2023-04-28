@@ -22,7 +22,6 @@ pub fn day15(input_path: &str) {
     println!("{:?}", time.elapsed());
 }
 
-#[inline(never)]
 fn do_15_part1(input: &str, y: i32) -> usize {
     let pairs = input
         .lines()
@@ -60,7 +59,7 @@ fn do_15_part2(input: &str, max_coord: usize) -> u64 {
         .lines()
         .map(|line| all_consuming(parse_line)(line).finish().unwrap().1);
 
-    let (mut sensors, beacons): (Vec<_>, Vec<_>) = pairs.clone().unzip();
+    let (sensors, beacons): (Vec<_>, Vec<_>) = pairs.clone().unzip();
 
     let distances: Vec<_> = pairs.map(|(s, b)| s.manhattan_distance(&b)).collect();
 
@@ -76,8 +75,8 @@ fn do_15_part2(input: &str, max_coord: usize) -> u64 {
             .collect::<Vec<_>>();
 
         ranges.sort_by_key(|r| r.start);
-        let (merged, splited_range) = ranges.split_first_mut().unwrap();
-        for r in splited_range {
+        let (merged, splitted_range) = ranges.split_first_mut().unwrap();
+        for r in splitted_range {
             if overlaps(&r, &merged) {
                 merged.end = r.end.max(merged.end);
             } else {
@@ -89,6 +88,7 @@ fn do_15_part2(input: &str, max_coord: usize) -> u64 {
     }
     panic!("couldn't find beacon")
 }
+
 fn overlaps<T>(a: &Range<T>, b: &Range<T>) -> bool
 where
     T: PartialOrd,
@@ -96,7 +96,7 @@ where
     a.start <= b.end && b.start <= a.end
 }
 
-#[derive(Debug, Hash, Eq, PartialEq)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
 struct Point {
     x: i32,
     y: i32,
