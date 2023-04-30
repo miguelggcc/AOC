@@ -1,7 +1,7 @@
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     fmt::Debug,
-    time::Instant,
+    time::Instant, iter::once,
 };
 
 use nom::{
@@ -56,13 +56,13 @@ fn do_16_part1(input: &str) -> u32 {
 
     let mut distances = Vec::with_capacity(valves.len());
 
-    for i in 0..valves.len() {
-        valves[i].paths = relevant_valves
+    for i in relevant_valves.iter().chain(once(&root_index)) {
+        valves[*i].paths = relevant_valves
             .iter()
-            .filter(|rv_index| rv_index != &&i)
+            .filter(|rv_index| rv_index != &i)
             .map(|rv_index| {
                 distances = vec![0; valves.len()];
-                let mut walking_indices = VecDeque::from(vec![i]);
+                let mut walking_indices = VecDeque::from(vec![*i]);
                 let mut visited = HashSet::new();
 
                 'w: while let Some(walking_index) = walking_indices.pop_front() {
@@ -100,30 +100,27 @@ fn do_16_part1(input: &str) -> u32 {
     };
     let mut walkers = VecDeque::from(vec![walker_root]);
     let mut max_pressure = 0;
-    while let Some(walker) = walkers.pop_front() {
-        for path in valves[walker.node_index].paths.iter().filter(|path| {
-            path.distance + 1 < walker.time && walker.valves_unopen.contains(&path.valve)
+    while let Some(parent_walker) = walkers.pop_front() {
+        for path in valves[parent_walker.node_index].paths.iter().filter(|path| {
+            path.distance + 2 < parent_walker.time && parent_walker.valves_unopen.contains(&path.valve)
         }) {
-            let mut child_walker = walker.clone();
+            let mut walker = parent_walker.clone();
 
-            child_walker.time -= path.distance;
-            child_walker.pressure += walker.rate * path.distance;
-            child_walker.node_index = path.valve;
-
-            child_walker.valves_unopen.remove(&path.valve);
-            child_walker.time -= 1;
-            child_walker.pressure += walker.rate;
-            child_walker.rate += valves[path.valve].rate;
-            /*child_walker.path.push((
+            walker.time -= path.distance+1;
+            walker.pressure += walker.rate * (path.distance+1);
+            walker.node_index = path.valve;
+            walker.valves_unopen.remove(&path.valve);
+            walker.rate += valves[path.valve].rate;
+            /*walker.path.push((
                 valves[valves_i[path.valve]].id.clone(),
-                child_walker.time,
-                child_walker.pressure,
+                walker.time,
+                walker.pressure,
             ));*/
 
             max_pressure =
-                max_pressure.max(child_walker.pressure + child_walker.rate * child_walker.time);
-            if child_walker.time > 0 && !child_walker.valves_unopen.is_empty() {
-                walkers.push_back(child_walker);
+                max_pressure.max(walker.pressure + walker.rate * walker.time);
+            if walker.time > 0 && !walker.valves_unopen.is_empty() {
+                walkers.push_back(walker);
             }
         }
     }
