@@ -5,6 +5,7 @@ use day12::day12;
 use day13::day13;
 use day14::day14;
 use day15::day15;
+use day16::day16;
 use day2::day2;
 use day3::day3;
 use day4::day4;
@@ -20,6 +21,7 @@ mod day12;
 mod day13;
 mod day14;
 mod day15;
+mod day16;
 mod day2;
 mod day3;
 mod day4;
@@ -28,7 +30,7 @@ mod day6;
 mod day7;
 mod day8;
 mod day9;
-const DAY: u32 = 15;
+const DAY: u32 = 16;
 
 fn main() {
     match DAY {
@@ -47,6 +49,7 @@ fn main() {
         13 => day13("inputs/input_day13.txt"),
         14 => day14("inputs/input_day14.txt"),
         15 => day15("inputs/input_day15.txt"),
+        16 => day16("inputs/input_day16.txt"),
         _ => unreachable!(),
     }
 }
