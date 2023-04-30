@@ -19,13 +19,6 @@ pub fn day16(input_path: &str) {
     let time = Instant::now();
     //Part 1
     println!("Max pressure: {}", do_16_part1(&input));
-    println!("Max pressure: {}", do_16_part1(&input));
-    println!("Max pressure: {}", do_16_part1(&input));
-    println!("Max pressure: {}", do_16_part1(&input));
-    println!("Max pressure: {}", do_16_part1(&input));
-    println!("Max pressure: {}", do_16_part1(&input));
-    println!("Max pressure: {}", do_16_part1(&input));
-    println!("Max pressure: {}", do_16_part1(&input));
 
     //Part 2
     //println!("Part 2, decoder key: {}", do_16_part2(&input, 4000000));
@@ -104,7 +97,6 @@ fn do_16_part1(input: &str) -> u32 {
     };
     let mut walkers = VecDeque::from(vec![walker_root]);
     let mut max_pressure = 0;
-    let mut total = 0u64;
     while let Some(walker) = walkers.pop_front() {
         
             for path in valves[walker.node_index]
@@ -133,16 +125,14 @@ fn do_16_part1(input: &str) -> u32 {
                 max_pressure = max_pressure.max(child_walker.pressure + child_walker.rate * child_walker.time);
                 if child_walker.time > 0 && !child_walker.valves_unopen.is_empty() {
                 walkers.push_back(child_walker);
-                total += 1;
             }
         }
     }
-    dbg!(total);
     max_pressure
 }
 
 fn do_16_part2(input: &str, max_coord: usize) -> u64 {
-    panic!("couldn't find beacon")
+    todo!()
 }
 
 #[derive(Debug)]
