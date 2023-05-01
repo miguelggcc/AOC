@@ -1,7 +1,8 @@
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     fmt::Debug,
-    time::Instant, iter::once,
+    iter::once,
+    time::Instant,
 };
 
 use nom::{
@@ -21,12 +22,51 @@ pub fn day16(input_path: &str) {
     println!("Max pressure: {}", do_16_part1(&input));
 
     //Part 2
-    //println!("Part 2, decoder key: {}", do_16_part2(&input, 4000000));
+    println!("Part 2, max pressure: {}", do_16_part2(&input));
 
     println!("{:?}", time.elapsed());
 }
 
 fn do_16_part1(input: &str) -> u32 {
+    let (valves, relevant_valves, root_index) = parse(input);
+
+    find_max_pressure(
+        root_index,
+        &valves,
+        &relevant_valves,
+        30,
+        &RelevantValves::get_n_1s(relevant_valves.len()),
+    )
+}
+
+fn do_16_part2(input: &str) -> u32 {
+    let (valves, relevant_valves, root_index) = parse(input);
+
+    let sets = 2u64.pow(relevant_valves.len() as u32) - 1;
+
+    let pressures: Vec<_> = (1..sets + 1)
+        .map(|flag| {
+            find_max_pressure(
+                root_index,
+                &valves,
+                &relevant_valves,
+                26,
+                &RelevantValves(flag),
+            )
+        })
+        .collect();
+
+    let mut max_pressure = 0;
+    let padding = RelevantValves(sets);
+    for index in 1..sets {
+        let elephant_index = RelevantValves(index).bit_complementary(&padding);
+        max_pressure = max_pressure.max(pressures[index as usize -1] + pressures[elephant_index as usize -1]);
+    }
+
+    max_pressure
+}
+
+fn parse(input: &str) -> (Vec<Valve>, Vec<usize>, usize) {
     let lines = input
         .lines()
         .map(|line| all_consuming(parse_line)(line).finish().unwrap().1);
@@ -47,6 +87,7 @@ fn do_16_part1(input: &str) -> u32 {
             }
 
             Valve {
+                id,
                 rate,
                 children,
                 paths: vec![],
@@ -59,8 +100,9 @@ fn do_16_part1(input: &str) -> u32 {
     for i in relevant_valves.iter().chain(once(&root_index)) {
         valves[*i].paths = relevant_valves
             .iter()
-            .filter(|rv_index| rv_index != &i)
-            .map(|rv_index| {
+            .enumerate()
+            .filter(|(_, rv_index)| rv_index != &i)
+            .map(|(i_rv, rv_index)| {
                 distances = vec![0; valves.len()];
                 let mut walking_indices = VecDeque::from(vec![*i]);
                 let mut visited = HashSet::new();
@@ -85,41 +127,51 @@ fn do_16_part1(input: &str) -> u32 {
                 }
                 Path {
                     distance: distances[*rv_index],
-                    valve: *rv_index,
+                    valve: i_rv,
                 }
             })
             .collect();
     }
+    (valves, relevant_valves, root_index)
+}
+
+fn find_max_pressure(
+    root_index: usize,
+    valves: &[Valve],
+    relevant_valves: &[usize],
+    max_time: u32,
+    relevant_valves_flags: &RelevantValves,
+) -> u32 {
     let walker_root = Walker {
         node_index: root_index,
         rate: 0,
         pressure: 0,
-        time: 30,
-        valves_unopen: HashSet::from_iter(relevant_valves),
-        //path: vec![("AA".to_string(), 30, 0)],
+        time: max_time,
+        valves_opened: RelevantValves(0),
+        //path: vec![]
     };
     let mut walkers = VecDeque::from(vec![walker_root]);
     let mut max_pressure = 0;
     while let Some(parent_walker) = walkers.pop_front() {
-        for path in valves[parent_walker.node_index].paths.iter().filter(|path| {
-            path.distance + 2 < parent_walker.time && parent_walker.valves_unopen.contains(&path.valve)
-        }) {
+        for path in valves[parent_walker.node_index]
+            .paths
+            .iter()
+            .filter(|path| {
+                relevant_valves_flags.is_on(path.valve)
+                    && path.distance + 2 < parent_walker.time
+                    && !parent_walker.valves_opened.is_on(path.valve)
+            })
+        {
             let mut walker = parent_walker.clone();
 
-            walker.time -= path.distance+1;
-            walker.pressure += walker.rate * (path.distance+1);
-            walker.node_index = path.valve;
-            walker.valves_unopen.remove(&path.valve);
-            walker.rate += valves[path.valve].rate;
-            /*walker.path.push((
-                valves[valves_i[path.valve]].id.clone(),
-                walker.time,
-                walker.pressure,
-            ));*/
+            walker.time -= path.distance + 1;
+            walker.pressure += walker.rate * (path.distance + 1);
+            walker.node_index = relevant_valves[path.valve];
+            walker.valves_opened.toggle(path.valve);
+            walker.rate += valves[relevant_valves[path.valve]].rate;
 
-            max_pressure =
-                max_pressure.max(walker.pressure + walker.rate * walker.time);
-            if walker.time > 0 && !walker.valves_unopen.is_empty() {
+            max_pressure = max_pressure.max(walker.pressure + walker.rate * walker.time);
+            if walker.time > 0 && !walker.valves_opened.all_open(relevant_valves_flags) {
                 walkers.push_back(walker);
             }
         }
@@ -127,12 +179,9 @@ fn do_16_part1(input: &str) -> u32 {
     max_pressure
 }
 
-fn do_16_part2(input: &str, max_coord: usize) -> u64 {
-    todo!()
-}
-
 #[derive(Debug)]
 struct Valve {
+    id: String,
     rate: u32,
     children: Vec<String>,
     paths: Vec<Path>,
@@ -150,8 +199,32 @@ struct Walker {
     rate: u32,
     pressure: u32,
     time: u32,
-    valves_unopen: HashSet<usize>,
+    valves_opened: RelevantValves,
     //path: Vec<(String, u32, u32)>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct RelevantValves(u64);
+
+impl RelevantValves {
+    fn toggle(&mut self, i: usize) {
+        assert!(i < 64, "index out of range");
+        self.0 ^= 1u64 << i
+    }
+    fn is_on(&self, i: usize) -> bool {
+        assert!(i < 64, "index out of range");
+        self.0 & 1u64 << i != 0
+    }
+    fn get_n_1s(n: usize) -> Self {
+        assert!(n < 64, "number out of range");
+        Self((1u64 << n) - 1)
+    }
+    fn bit_complementary(&self, padding: &Self) -> u64 {
+        !self.0 & padding.0
+    }
+    fn all_open(&self, valves: &Self) -> bool {
+        &self.0 == &valves.0
+    }
 }
 
 fn parse_line(input: &str) -> IResult<&str, (String, u32, Vec<String>)> {
@@ -182,7 +255,7 @@ fn parse_line(input: &str) -> IResult<&str, (String, u32, Vec<String>)> {
 mod tests {
 
     use super::do_16_part1;
-    //use super::do_16_part2;
+    use super::do_16_part2;
 
     #[test]
     fn part_1() {
@@ -198,6 +271,6 @@ Valve II has flow rate=0; tunnels lead to valves AA, JJ
 Valve JJ has flow rate=21; tunnel leads to valve II";
 
         assert_eq!(do_16_part1(input), 1651);
-        //assert_eq!(do_16_part2(input, 20), 56000011)
+        assert_eq!(do_16_part2(input), 1707);
     }
 }
