@@ -63,30 +63,25 @@ fn do_day18_part2(input: &str) -> usize {
 
     let mut q = VecDeque::new();
     q.push_back(Cube::new(bounds.min_x, bounds.min_y, bounds.min_z));
-
+    let mut surface = 0;
     let mut steam = HashSet::new();
     while let Some(cube) = q.pop_front() {
-        for nc in cube
-            .get_neighbours_bounded(&bounds)
+        cube.get_neighbours_bounded(&bounds)
             .into_iter()
-            .filter(|nb| !cubes.contains(nb))
-        {
-            if !steam.contains(&nc) {
-                steam.insert(nc.clone());
-                q.push_back(nc);
-            }
-        }
-    }
+            .for_each(|nc| {
+                if cubes.contains(&nc) {
+                    surface += 1;
+                } else {
+                    if !steam.contains(&nc) {
+                        steam.insert(nc.clone());
 
-    cubes
-        .iter()
-        .map(|c| {
-            c.get_neighbours()
-                .iter()
-                .filter(|nc| steam.contains(nc))
-                .count()
-        })
-        .sum()
+                        steam.insert(nc.clone());
+                        q.push_back(nc);
+                    }
+                }
+            })
+    }
+    surface
 }
 
 fn parse_line(input: &str) -> IResult<&str, Cube> {
@@ -121,7 +116,7 @@ impl Cube {
             Self::new(self.x, self.y, self.z - 1),
         ]
     }
-    fn get_neighbours_bounded(&self, b: &Bounds) -> impl Iterator<Item=Cube> {
+    fn get_neighbours_bounded(&self, b: &Bounds) -> impl Iterator<Item = Cube> {
         let mut v = Vec::with_capacity(6);
         if self.x > b.min_x - 1 {
             v.push(Self::new(self.x - 1, self.y, self.z));
