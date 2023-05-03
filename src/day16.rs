@@ -60,7 +60,8 @@ fn do_16_part2(input: &str) -> u32 {
     let padding = RelevantValves(sets);
     for index in 1..sets {
         let elephant_index = RelevantValves(index).bit_complementary(&padding);
-        max_pressure = max_pressure.max(pressures[index as usize -1] + pressures[elephant_index as usize -1]);
+        max_pressure = max_pressure
+            .max(pressures[index as usize - 1] + pressures[elephant_index as usize - 1]);
     }
 
     max_pressure
@@ -87,7 +88,6 @@ fn parse(input: &str) -> (Vec<Valve>, Vec<usize>, usize) {
             }
 
             Valve {
-                id,
                 rate,
                 children,
                 paths: vec![],
@@ -181,7 +181,6 @@ fn find_max_pressure(
 
 #[derive(Debug)]
 struct Valve {
-    id: String,
     rate: u32,
     children: Vec<String>,
     paths: Vec<Path>,
