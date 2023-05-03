@@ -63,8 +63,10 @@ fn do_day18_part2(input: &str) -> usize {
 
     let mut q = VecDeque::new();
     q.push_back(Cube::new(bounds.min_x, bounds.min_y, bounds.min_z));
+    
     let mut surface = 0;
     let mut steam = HashSet::new();
+
     while let Some(cube) = q.pop_front() {
         cube.get_neighbours_bounded(&bounds)
             .into_iter()
