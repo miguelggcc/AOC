@@ -25,6 +25,7 @@ fn do_day18_part1(input: &str) -> usize {
         .lines()
         .map(|line| all_consuming(parse_line)(line).finish().unwrap().1)
         .collect();
+
     cubes
         .iter()
         .map(|c| {
@@ -47,9 +48,9 @@ fn do_day18_part2(input: &str) -> usize {
             min_x: i32::MAX,
             min_y: i32::MAX,
             min_z: i32::MAX,
-            max_x: 0,
-            max_y: 0,
-            max_z: 0,
+            max_x: i32::MIN,
+            max_y: i32::MIN,
+            max_z: i32::MIN,
         },
         |b, c| Bounds {
             min_x: b.min_x.min(c.x),
@@ -63,20 +64,18 @@ fn do_day18_part2(input: &str) -> usize {
 
     let mut q = VecDeque::new();
     q.push_back(Cube::new(bounds.min_x, bounds.min_y, bounds.min_z));
-    
+
     let mut surface = 0;
     let mut steam = HashSet::new();
 
     while let Some(cube) = q.pop_front() {
-        cube.get_neighbours_bounded(&bounds)
-            .into_iter()
+        cube.get_neighbours()
+            .into_iter().filter(|nc| nc.within_bounds(&bounds))
             .for_each(|nc| {
                 if cubes.contains(&nc) {
                     surface += 1;
                 } else {
                     if !steam.contains(&nc) {
-                        steam.insert(nc.clone());
-
                         steam.insert(nc.clone());
                         q.push_back(nc);
                     }
@@ -86,6 +85,7 @@ fn do_day18_part2(input: &str) -> usize {
     surface
 }
 
+#[inline(always)]
 fn parse_line(input: &str) -> IResult<&str, Cube> {
     map(
         separated_list1(complete::char(','), complete::i32),
@@ -118,27 +118,8 @@ impl Cube {
             Self::new(self.x, self.y, self.z - 1),
         ]
     }
-    fn get_neighbours_bounded(&self, b: &Bounds) -> impl Iterator<Item = Cube> {
-        let mut v = Vec::with_capacity(6);
-        if self.x > b.min_x - 1 {
-            v.push(Self::new(self.x - 1, self.y, self.z));
-        }
-        if self.y > b.min_y - 1 {
-            v.push(Self::new(self.x, self.y - 1, self.z));
-        }
-        if self.z > b.min_z - 1 {
-            v.push(Self::new(self.x, self.y, self.z - 1));
-        }
-        if self.x < b.max_x + 1 {
-            v.push(Self::new(self.x + 1, self.y, self.z));
-        }
-        if self.y < b.max_y + 1 {
-            v.push(Self::new(self.x, self.y + 1, self.z));
-        }
-        if self.z < b.max_z + 1 {
-            v.push(Self::new(self.x, self.y, self.z + 1));
-        }
-        v.into_iter()
+    fn within_bounds(&self, b: &Bounds)->bool{
+        self.x>=b.min_x-1 && self.x<=b.max_x+1 && self.y>=b.min_y-1 && self.y<=b.max_y+1 && self.z>=b.min_z-1 && self.z<=b.max_z+1
     }
 }
 
