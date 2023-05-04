@@ -80,8 +80,7 @@ fn do_15_part2(input: &str, max_coord: usize) -> u64 {
             if overlaps(r, merged) {
                 merged.end = r.end.max(merged.end);
             } else if !beacons.contains(&Point { x: merged.end, y }) {
-                    return 4000000 * merged.end as u64 + y as u64;
-                
+                return 4000000 * merged.end as u64 + y as u64;
             }
         }
     }

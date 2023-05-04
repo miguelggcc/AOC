@@ -75,10 +75,9 @@ fn do_day18_part2(input: &str) -> usize {
             .for_each(|nc| {
                 if cubes.contains(&nc) {
                     surface += 1;
-                } else  if !steam.contains(&nc) {
-                        steam.insert(nc.clone());
-                        q.push_back(nc);
-                
+                } else if !steam.contains(&nc) {
+                    steam.insert(nc.clone());
+                    q.push_back(nc);
                 }
             })
     }

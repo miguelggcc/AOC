@@ -34,8 +34,10 @@ fn do_19_part1(input: &str) -> u32 {
 
 fn do_19_part2(input: &str) -> u32 {
     let bps = parse(input);
-    bps.iter().take(3)
-        .map(|bp| dbg!(find_max_geode(bp, 32))).product()
+    bps.iter()
+        .take(3)
+        .map(|bp| dbg!(find_max_geode(bp, 32)))
+        .product()
 }
 
 fn find_max_geode(bp: &Blueprint, max_time: u8) -> u32 {
@@ -51,22 +53,34 @@ fn find_max_geode(bp: &Blueprint, max_time: u8) -> u32 {
         geode_robots: 0,
     };
     let mut max_geode = 0;
-    let times = (1..max_time+1).map(|t|t as u32*(t as u32+1)/2).collect::<Vec<_>>();
+    let times = (1..max_time + 1)
+        .map(|t| t as u32 * (t as u32 - 1) / 2)
+        .collect::<Vec<_>>();
     let mut visited = HashSet::new();
     let mut states = VecDeque::from(vec![state_root]);
-    
+
     while let Some(mut parent_state) = states.pop_front() {
         for state in parent_state.next_states(bp) {
             if !visited.contains(&state.to_bytes()) {
                 visited.insert(state.to_bytes());
-                max_geode = max_geode.max(state.geode + state.time*state.geode_robots);
+                max_geode = max_geode.max(state.geode + state.time * state.geode_robots);
 
-                if state.time > 0 && bp.geode_robot.1 as u32<=state.obsidian as u32 + state.time as u32*state.obsidian_robots as u32 + times[state.time as usize]  && max_geode < state.geode + state.time*state.geode_robots + times[state.time as usize] as u8 {
+                if state.time > 0
+                    && bp.geode_robot.1 as u32
+                        <= state.obsidian as u32
+                            + state.time as u32 * state.obsidian_robots as u32
+                            + times[state.time as usize]
+                    && max_geode
+                        < state.geode
+                            + state.time * state.geode_robots
+                            + times[state.time as usize] as u8
+                {
                     states.push_back(state);
                 }
             }
         }
     }
+    dbg!(visited.len());
     max_geode as u32
 }
 
@@ -127,31 +141,32 @@ impl State {
             other_state.obsidian -= bp.geode_robot.1;
             other_state.geode_robots += 1;
             v.push(other_state);
-        } else{
-        if self.ore >= bp.obsidian_robot.0 && self.clay >= bp.obsidian_robot.1 {
-            let mut other_state = self.clone();
-            other_state.step();
-            other_state.ore -= bp.obsidian_robot.0;
-            other_state.clay -= bp.obsidian_robot.1;
-            other_state.obsidian_robots += 1;
-            v.push(other_state);
+        } else {
+            if self.ore >= bp.obsidian_robot.0 && self.clay >= bp.obsidian_robot.1 {
+                let mut other_state = self.clone();
+                other_state.step();
+                other_state.ore -= bp.obsidian_robot.0;
+                other_state.clay -= bp.obsidian_robot.1;
+                other_state.obsidian_robots += 1;
+                v.push(other_state);
+            }
+            if self.ore >= bp.clay_robot && self.clay < bp.obsidian_robot.1 {
+                let mut other_state = self.clone();
+                other_state.step();
+                other_state.ore -= bp.clay_robot;
+                other_state.clay_robots += 1;
+                v.push(other_state);
+            }
+            if self.ore >= bp.ore_robot && self.clay < bp.geode_robot.0 {
+                let mut other_state = self.clone();
+                other_state.step();
+                other_state.ore -= bp.ore_robot;
+                other_state.ore_robots += 1;
+                v.push(other_state);
+            }
+            self.step();
+            v.push(self.clone());
         }
-        if self.ore >= bp.clay_robot && self.clay<bp.obsidian_robot.1 {
-            let mut other_state = self.clone();
-            other_state.step();
-            other_state.ore -= bp.clay_robot;
-            other_state.clay_robots += 1;
-            v.push(other_state);
-        }
-        if self.ore >= bp.ore_robot && self.clay<bp.geode_robot.0 {
-            let mut other_state = self.clone();
-            other_state.step();
-            other_state.ore -= bp.ore_robot;
-            other_state.ore_robots += 1;
-            v.push(other_state);
-        }
-    self.step();
-        v.push(self.clone());}
         v
     }
     fn to_bytes(&self) -> u64 {
