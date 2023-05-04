@@ -77,12 +77,11 @@ fn do_15_part2(input: &str, max_coord: usize) -> u64 {
         ranges.sort_by_key(|r| r.start);
         let (merged, splitted_range) = ranges.split_first_mut().unwrap();
         for r in splitted_range {
-            if overlaps(&r, &merged) {
+            if overlaps(r, merged) {
                 merged.end = r.end.max(merged.end);
-            } else {
-                if !beacons.contains(&Point { x: merged.end, y }) {
+            } else if !beacons.contains(&Point { x: merged.end, y }) {
                     return 4000000 * merged.end as u64 + y as u64;
-                }
+                
             }
         }
     }

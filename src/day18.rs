@@ -70,15 +70,15 @@ fn do_day18_part2(input: &str) -> usize {
 
     while let Some(cube) = q.pop_front() {
         cube.get_neighbours()
-            .into_iter().filter(|nc| nc.within_bounds(&bounds))
+            .into_iter()
+            .filter(|nc| nc.within_bounds(&bounds))
             .for_each(|nc| {
                 if cubes.contains(&nc) {
                     surface += 1;
-                } else {
-                    if !steam.contains(&nc) {
+                } else  if !steam.contains(&nc) {
                         steam.insert(nc.clone());
                         q.push_back(nc);
-                    }
+                
                 }
             })
     }
@@ -118,8 +118,13 @@ impl Cube {
             Self::new(self.x, self.y, self.z - 1),
         ]
     }
-    fn within_bounds(&self, b: &Bounds)->bool{
-        self.x>=b.min_x-1 && self.x<=b.max_x+1 && self.y>=b.min_y-1 && self.y<=b.max_y+1 && self.z>=b.min_z-1 && self.z<=b.max_z+1
+    fn within_bounds(&self, b: &Bounds) -> bool {
+        self.x >= b.min_x - 1
+            && self.x <= b.max_x + 1
+            && self.y >= b.min_y - 1
+            && self.y <= b.max_y + 1
+            && self.z >= b.min_z - 1
+            && self.z <= b.max_z + 1
     }
 }
 

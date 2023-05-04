@@ -1,5 +1,5 @@
 use std::{
-    collections::{hash_map::Entry, HashMap, HashSet, VecDeque},
+    collections::{hash_map::Entry, HashMap},
     time::Instant,
 };
 
@@ -186,7 +186,7 @@ impl Rock {
         let wall_check = if dx > 0 {
             self.x + self.t.width() + dx as usize > WIDTH
         } else {
-            self.x < dx.abs() as usize
+            self.x < dx.unsigned_abs()
         };
         if wall_check {
             false
@@ -202,7 +202,7 @@ impl Rock {
         if dx > 0 {
             self.x += dx as usize;
         } else {
-            self.x -= dx.abs() as usize;
+            self.x -= dx.unsigned_abs();
         }
     }
 

@@ -222,7 +222,7 @@ impl RelevantValves {
         !self.0 & padding.0
     }
     fn all_open(&self, valves: &Self) -> bool {
-        &self.0 == &valves.0
+        self.0 == valves.0
     }
 }
 
