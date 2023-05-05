@@ -108,7 +108,7 @@ struct Blueprint {
     max_ore: u8,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+#[derive(Debug, Clone)]
 struct State {
     time: u8,
     ore: u8,
