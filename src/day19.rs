@@ -16,12 +16,13 @@ use nom::{
 pub fn day19(input_path: &str) {
     let input = std::fs::read_to_string(input_path).expect("Can't read input file");
     let time = Instant::now();
+
     //Part 1
     println!("Sum of quality levels: {}", do_19_part1(&input));
 
     //Part 2
     println!("Product of first 3 bp: {}", do_19_part2(&input));
-
+    
     println!("{:?}", time.elapsed());
 }
 
@@ -55,28 +56,20 @@ fn find_max_geode(bp: &Blueprint, max_time: u8) -> u32 {
     let times = (1..max_time + 2)
         .map(|t| t as u16 * (t.saturating_sub(1) as u16) / 2)
         .collect::<Vec<_>>();
-    let mut visited = HashSet::new();
+
+    let mut next_states = vec![];
     let mut states = VecDeque::from(vec![(state_root, 0)]);
 
     while let Some((mut parent_state, previous_missed_robots)) = states.pop_front() {
-        for (state, missed_robots) in parent_state
-            .next_states(bp, previous_missed_robots)
-            .into_iter()
-            .flatten()
-        {
-            if !visited.contains(&state.to_bytes()) {
-                visited.insert(state.to_bytes());
-                max_geode = max_geode.max(state.geode);
+        parent_state.next_states(bp, previous_missed_robots, &mut next_states);
 
-                if state.time > 0
-                    && bp.geode_robot.1 as u16
-                        <= state.obsidian as u16
-                            + state.time as u16 * state.obsidian_robots as u16
-                            + times[state.time as usize]
-                    && (max_geode as u16) < state.geode as u16 + times[state.time as usize] as u16
-                {
-                    states.push_back((state, missed_robots));
-                }
+        for (state, missed_robots) in next_states.drain(..).flatten() {
+            max_geode = max_geode.max(state.geode);
+
+            if state.time > 1
+                && (max_geode as u16) < state.geode as u16 + times[state.time as usize] as u16
+            {
+                states.push_back((state, missed_robots));
             }
         }
     }
@@ -129,11 +122,8 @@ impl State {
         &mut self,
         bp: &Blueprint,
         previous_missed_robots: u8,
-    ) -> Vec<Option<(Self, u8)>> {
-        if self.time == 1 {
-            return vec![];
-        }
-        let mut v = vec![];
+        v: &mut Vec<Option<(Self, u8)>>,
+    ) {
         let can_build_obsidian_robot =
             self.ore >= bp.obsidian_robot.0 && self.clay >= bp.obsidian_robot.1;
         let can_build_clay_robot = self.ore >= bp.clay_robot;
@@ -159,7 +149,7 @@ impl State {
                     v.push(Some((other_state, 0)));
                 }
             }
-            if can_build_clay_robot && self.clay < bp.obsidian_robot.1 {
+            if can_build_clay_robot && self.clay_robots < bp.obsidian_robot.1 {
                 if previous_missed_robots & 1u8 << 1 != 0 {
                     v.push(None)
                 } else {
@@ -186,25 +176,11 @@ impl State {
             let missed_robots = (u8::from(can_build_obsidian_robot) << 2)
                 + (u8::from(can_build_clay_robot) << 1)
                 + u8::from(can_build_ore_robot);
-            //If this current branch in which no robots were created could have created a robot and then a
-            //robot is created in the next state, then it's inefficient and should be purged
+            //If this current branch could have created a robot but don't and then
+            //one is created in the next state, then it's inefficient and should be purged
 
             v.push(Some((self.clone(), missed_robots)));
         }
-
-        v
-    }
-    fn to_bytes(&self) -> u64 {
-        u64::from_be_bytes([
-            self.time,
-            self.ore,
-            self.clay,
-            self.obsidian,
-            self.geode,
-            self.ore_robots,
-            self.clay_robots,
-            self.obsidian_robots,
-        ])
     }
 }
 
@@ -268,6 +244,6 @@ Blueprint 2:
   Each geode robot costs 3 ore and 12 obsidian.";
 
         assert_eq!(do_19_part1(input), 33);
-        assert_eq!(do_19_part2(input), 3348);
+        assert_eq!(do_19_part2(input), 56 * 62);
     }
 }
