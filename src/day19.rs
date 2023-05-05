@@ -65,8 +65,6 @@ fn find_max_geode(bp: &Blueprint, max_time: u8) -> u32 {
             .flatten()
         {
             if !visited.contains(&state.to_bytes()) {
-                let possible_best = state.geode as u16 + times[state.time as usize] as u16;
-
                 visited.insert(state.to_bytes());
                 max_geode = max_geode.max(state.geode);
 
@@ -75,7 +73,7 @@ fn find_max_geode(bp: &Blueprint, max_time: u8) -> u32 {
                         <= state.obsidian as u16
                             + state.time as u16 * state.obsidian_robots as u16
                             + times[state.time as usize]
-                    && (max_geode as u16) < possible_best
+                    && (max_geode as u16) < state.geode as u16 + times[state.time as usize] as u16
                 {
                     states.push_back((state, missed_robots));
                 }
