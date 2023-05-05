@@ -28,7 +28,7 @@ pub fn day19(input_path: &str) {
 fn do_19_part1(input: &str) -> u32 {
     let bps = parse(input);
     bps.iter()
-        .map(|bp| dbg!(find_max_geode(bp, 24)) * bp.id as u32)
+        .map(|bp| find_max_geode(bp, 24) * bp.id as u32)
         .sum()
 }
 
@@ -36,7 +36,7 @@ fn do_19_part2(input: &str) -> u32 {
     let bps = parse(input);
     bps.iter()
         .take(3)
-        .map(|bp| dbg!(find_max_geode(bp, 32)))
+        .map(|bp| find_max_geode(bp, 32))
         .product()
 }
 
@@ -50,37 +50,38 @@ fn find_max_geode(bp: &Blueprint, max_time: u8) -> u32 {
         ore_robots: 1,
         clay_robots: 0,
         obsidian_robots: 0,
-        geode_robots: 0,
     };
     let mut max_geode = 0;
-    let times = (1..max_time + 1)
-        .map(|t| t as u32 * (t as u32 - 1) / 2)
+    let times = (1..max_time + 2)
+        .map(|t| t as u16 * (t.saturating_sub(1) as u16) / 2)
         .collect::<Vec<_>>();
     let mut visited = HashSet::new();
-    let mut states = VecDeque::from(vec![state_root]);
+    let mut states = VecDeque::from(vec![(state_root, 0)]);
 
-    while let Some(mut parent_state) = states.pop_front() {
-        for state in parent_state.next_states(bp) {
+    while let Some((mut parent_state, previous_missed_robots)) = states.pop_front() {
+        for (state, missed_robots) in parent_state
+            .next_states(bp, previous_missed_robots)
+            .into_iter()
+            .flatten()
+        {
             if !visited.contains(&state.to_bytes()) {
+                let possible_best = state.geode as u16 + times[state.time as usize] as u16;
+
                 visited.insert(state.to_bytes());
-                max_geode = max_geode.max(state.geode + state.time * state.geode_robots);
+                max_geode = max_geode.max(state.geode);
 
                 if state.time > 0
-                    && bp.geode_robot.1 as u32
-                        <= state.obsidian as u32
-                            + state.time as u32 * state.obsidian_robots as u32
+                    && bp.geode_robot.1 as u16
+                        <= state.obsidian as u16
+                            + state.time as u16 * state.obsidian_robots as u16
                             + times[state.time as usize]
-                    && max_geode
-                        < state.geode
-                            + state.time * state.geode_robots
-                            + times[state.time as usize] as u8
+                    && (max_geode as u16) < possible_best
                 {
-                    states.push_back(state);
+                    states.push_back((state, missed_robots));
                 }
             }
         }
     }
-    dbg!(visited.len());
     max_geode as u32
 }
 
@@ -104,6 +105,7 @@ struct Blueprint {
     clay_robot: u8,
     obsidian_robot: (u8, u8),
     geode_robot: (u8, u8),
+    max_ore: u8,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
@@ -116,8 +118,6 @@ struct State {
     ore_robots: u8,
     clay_robots: u8,
     obsidian_robots: u8,
-    geode_robots: u8,
-    //path: String
 }
 
 impl State {
@@ -126,47 +126,74 @@ impl State {
         self.ore += self.ore_robots;
         self.clay += self.clay_robots;
         self.obsidian += self.obsidian_robots;
-        self.geode += self.geode_robots;
     }
-    fn next_states(&mut self, bp: &Blueprint) -> Vec<Self> {
+    fn next_states(
+        &mut self,
+        bp: &Blueprint,
+        previous_missed_robots: u8,
+    ) -> Vec<Option<(Self, u8)>> {
         if self.time == 1 {
-            self.step();
-            return vec![self.clone()];
+            return vec![];
         }
         let mut v = vec![];
+        let can_build_obsidian_robot =
+            self.ore >= bp.obsidian_robot.0 && self.clay >= bp.obsidian_robot.1;
+        let can_build_clay_robot = self.ore >= bp.clay_robot;
+        let can_build_ore_robot = self.ore >= bp.ore_robot;
+
         if self.ore >= bp.geode_robot.0 && self.obsidian >= bp.geode_robot.1 {
             let mut other_state = self.clone();
             other_state.step();
             other_state.ore -= bp.geode_robot.0;
             other_state.obsidian -= bp.geode_robot.1;
-            other_state.geode_robots += 1;
-            v.push(other_state);
+            other_state.geode += other_state.time;
+            v.push(Some((other_state, 0)));
         } else {
-            if self.ore >= bp.obsidian_robot.0 && self.clay >= bp.obsidian_robot.1 {
-                let mut other_state = self.clone();
-                other_state.step();
-                other_state.ore -= bp.obsidian_robot.0;
-                other_state.clay -= bp.obsidian_robot.1;
-                other_state.obsidian_robots += 1;
-                v.push(other_state);
+            if can_build_obsidian_robot {
+                if previous_missed_robots & 1u8 << 2 != 0 {
+                    v.push(None)
+                } else {
+                    let mut other_state = self.clone();
+                    other_state.step();
+                    other_state.ore -= bp.obsidian_robot.0;
+                    other_state.clay -= bp.obsidian_robot.1;
+                    other_state.obsidian_robots += 1;
+                    v.push(Some((other_state, 0)));
+                }
             }
-            if self.ore >= bp.clay_robot && self.clay < bp.obsidian_robot.1 {
-                let mut other_state = self.clone();
-                other_state.step();
-                other_state.ore -= bp.clay_robot;
-                other_state.clay_robots += 1;
-                v.push(other_state);
+            if can_build_clay_robot && self.clay < bp.obsidian_robot.1 {
+                if previous_missed_robots & 1u8 << 1 != 0 {
+                    v.push(None)
+                } else {
+                    let mut other_state = self.clone();
+                    other_state.step();
+                    other_state.ore -= bp.clay_robot;
+                    other_state.clay_robots += 1;
+                    v.push(Some((other_state, 0)));
+                }
             }
-            if self.ore >= bp.ore_robot && self.clay < bp.geode_robot.0 {
-                let mut other_state = self.clone();
-                other_state.step();
-                other_state.ore -= bp.ore_robot;
-                other_state.ore_robots += 1;
-                v.push(other_state);
+            if can_build_ore_robot && self.ore_robots < bp.max_ore {
+                if previous_missed_robots & 1u8 << 0 != 0 {
+                    v.push(None)
+                } else {
+                    let mut other_state = self.clone();
+                    other_state.step();
+                    other_state.ore -= bp.ore_robot;
+                    other_state.ore_robots += 1;
+                    v.push(Some((other_state, 0)));
+                }
             }
+
             self.step();
-            v.push(self.clone());
+            let missed_robots = (u8::from(can_build_obsidian_robot) << 2)
+                + (u8::from(can_build_clay_robot) << 1)
+                + u8::from(can_build_ore_robot);
+            //If this current branch in which no robots were created could have created a robot and then a
+            //robot is created in the next state, then it's inefficient and should be purged
+
+            v.push(Some((self.clone(), missed_robots)));
         }
+
         v
     }
     fn to_bytes(&self) -> u64 {
@@ -178,7 +205,7 @@ impl State {
             self.geode,
             self.ore_robots,
             self.clay_robots,
-            self.obsidian_robots + (self.geode_robots << 4),
+            self.obsidian_robots,
         ])
     }
 }
@@ -214,6 +241,10 @@ fn parse_blueprint(input: &str) -> IResult<&str, Blueprint> {
             clay_robot,
             obsidian_robot,
             geode_robot,
+            max_ore: ore_robot
+                .max(clay_robot)
+                .max(obsidian_robot.0)
+                .max(geode_robot.0),
         },
     ))
 }
@@ -239,6 +270,6 @@ Blueprint 2:
   Each geode robot costs 3 ore and 12 obsidian.";
 
         assert_eq!(do_19_part1(input), 33);
-        assert_eq!(do_19_part2(input), 1707);
+        assert_eq!(do_19_part2(input), 3348);
     }
 }
