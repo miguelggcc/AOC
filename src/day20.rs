@@ -3,12 +3,10 @@ use std::time::Instant;
 pub fn day20(input_path: &str) {
     let input = std::fs::read_to_string(input_path).expect("Can't read input file");
     let time = Instant::now();
-    for _ in 0..10 {
-        //Part 1
-        println!("Grove coordinates: {}", do_day20_part1(&input));
-        //Part 2
-        println!("Part 2, grove coordinates: {}", do_day20_part2(&input));
-    }
+    //Part 1
+    println!("Grove coordinates: {}", do_day20_part1(&input));
+    //Part 2
+    println!("Part 2, grove coordinates: {}", do_day20_part2(&input));
     println!("{:?}", time.elapsed());
 }
 
@@ -67,7 +65,7 @@ impl List {
         *self.v.get(i % self.v.len()).unwrap()
     }
     fn mix(&mut self, element: i64, i: usize) {
-        let old_index = self.i.iter().position(|ii| ii == &i).unwrap();
+        let old_index = self.i.iter().position(|old_i| old_i == &i).unwrap();
         let new_index = (old_index as i64 + element).rem_euclid(self.len) as usize;
 
         self.i.remove(old_index);
