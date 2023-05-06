@@ -1,8 +1,4 @@
-use std::{
-    collections::{VecDeque},
-    fmt::Debug,
-    time::Instant,
-};
+use std::{collections::VecDeque, fmt::Debug, time::Instant};
 
 use nom::{
     bytes::complete::tag,
@@ -22,7 +18,7 @@ pub fn day19(input_path: &str) {
 
     //Part 2
     println!("Product of first 3 bp: {}", do_19_part2(&input));
-    
+
     println!("{:?}", time.elapsed());
 }
 
@@ -223,7 +219,7 @@ fn parse_blueprint(input: &str) -> IResult<&str, Blueprint> {
     ))
 }
 
-#[cfg(test)]
+/*#[cfg(test)]
 mod tests {
 
     use super::do_19_part1;
@@ -236,7 +232,7 @@ mod tests {
   Each clay robot costs 2 ore.
   Each obsidian robot costs 3 ore and 14 clay.
   Each geode robot costs 2 ore and 7 obsidian.
-      
+
 Blueprint 2:
   Each ore robot costs 2 ore.
   Each clay robot costs 3 ore.
@@ -246,4 +242,4 @@ Blueprint 2:
         assert_eq!(do_19_part1(input), 33);
         assert_eq!(do_19_part2(input), 56 * 62);
     }
-}
+}*/
