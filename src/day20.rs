@@ -11,18 +11,18 @@ pub fn day20(input_path: &str) {
 }
 
 fn do_day20_part1(input: &str) -> i64 {
-    let v: Vec<i64> = input.lines().map(|l| l.parse::<i64>().unwrap()).collect();
-    let indices = (0..v.len()).collect::<Vec<usize>>();
+    let v: Vec<_> = input
+        .lines()
+        .enumerate()
+        .map(|(i, l)| (l.parse::<i64>().unwrap(), i))
+        .collect();
 
     let mut list = List {
         v: v.clone(),
-        i: indices,
         len: v.len() as i64 - 1,
     };
-    v.into_iter()
-        .enumerate()
-        .for_each(|(i, element)| list.mix(element, i));
-    let zero = list.v.iter().position(|n| n == &0).unwrap();
+    v.into_iter().for_each(|(element, i)| list.mix(element, i));
+    let zero = list.v.iter().position(|(n, _)| n == &0).unwrap();
     (1000..=3000)
         .step_by(1000)
         .map(|i| list.get(zero + i))
@@ -31,23 +31,21 @@ fn do_day20_part1(input: &str) -> i64 {
 
 fn do_day20_part2(input: &str) -> i64 {
     let decryption_key = 811589153;
-    let v: Vec<i64> = input
+    let v: Vec<_> = input
         .lines()
-        .map(|l| l.parse::<i64>().unwrap() * decryption_key)
+        .enumerate()
+        .map(|(i, l)| (l.parse::<i64>().unwrap() * decryption_key, i))
         .collect();
-    let indices = (0..v.len()).collect::<Vec<usize>>();
 
     let mut list = List {
         v: v.clone(),
-        i: indices,
         len: v.len() as i64 - 1,
     };
     v.into_iter()
-        .enumerate()
         .cycle()
-        .take(list.i.len() * 10)
-        .for_each(|(i, element)| list.mix(element, i));
-    let zero = list.v.iter().position(|n| n == &0).unwrap();
+        .take(list.v.len() * 10)
+        .for_each(|(element, i)| list.mix(element, i));
+    let zero = list.v.iter().position(|(n, _)| n == &0).unwrap();
     (1000..=3000)
         .step_by(1000)
         .map(|i| list.get(zero + i))
@@ -55,24 +53,20 @@ fn do_day20_part2(input: &str) -> i64 {
 }
 
 struct List {
-    v: Vec<i64>,
-    i: Vec<usize>,
+    v: Vec<(i64, usize)>,
     len: i64,
 }
 
 impl List {
     fn get(&mut self, i: usize) -> i64 {
-        *self.v.get(i % self.v.len()).unwrap()
+        self.v.get(i % self.v.len()).unwrap().0
     }
     fn mix(&mut self, element: i64, i: usize) {
-        let old_index = self.i.iter().position(|old_i| old_i == &i).unwrap();
+        let old_index = self.v.iter().position(|(_, old_i)| old_i == &i).unwrap();
         let new_index = (old_index as i64 + element).rem_euclid(self.len) as usize;
 
-        self.i.remove(old_index);
-        self.i.insert(new_index, i);
-
         self.v.remove(old_index);
-        self.v.insert(new_index, element);
+        self.v.insert(new_index, (element, i));
     }
 }
 
