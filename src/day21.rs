@@ -55,7 +55,7 @@ fn do_day21_part2(input: &str) -> i64 {
     }; //Replace root's operation with a substraction, because we want to solve a+b*j=c+d*j for j
 
     let out = tuple_calculate("root", &ids, &monkeys, "humn");
-    (out.0 / out.1).abs() as i64 //Real (out.0) and imaginary (out.1) numbers have to be equal
+    (out.0 / out.1).round().abs() as i64 //Real (out.0) and imaginary (out.1) numbers have to be equal
 }
 
 fn calculate(monkey_id: &str, ids: &HashMap<String, usize>, monkeys: &[Monkey]) -> i64 {
