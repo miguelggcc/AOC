@@ -52,10 +52,10 @@ fn do_day21_part2(input: &str) -> i64 {
         | Operation::Mul(m1, m2)
         | Operation::Div(m1, m2) => Operation::Sub(m1.to_owned(), m2.to_owned()),
         _ => unreachable!(),
-    };
+    }; //Replace root's operation with a substraction, because we want to solve a+b*j=c+d*j for j
 
     let out = tuple_calculate("root", &ids, &monkeys, "humn");
-    (out.0 / out.1).abs() as i64 //Left (out.0) and right (out.1) numbers have to be equal
+    (out.0 / out.1).abs() as i64 //Real (out.0) and imaginary (out.1) numbers have to be equal
 }
 
 fn calculate(monkey_id: &str, ids: &HashMap<String, usize>, monkeys: &[Monkey]) -> i64 {
