@@ -40,6 +40,7 @@ mod day6;
 mod day7;
 mod day8;
 mod day9;
+mod day22;
 const DAY: u32 = 21;
 
 fn main() {
