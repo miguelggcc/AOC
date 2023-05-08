@@ -244,7 +244,6 @@ impl Grid {
         let x_us = usize::try_from(x).ok()?;
         let y_us = usize::try_from(y).ok()?;
         self.data.get(x_us + y_us * self.nx)
-        //self.data.get(x as usize + y as usize * self.nx)
     }
 }
 
