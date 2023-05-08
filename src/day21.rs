@@ -61,10 +61,10 @@ fn do_day21_part2(input: &str) -> i64 {
 fn calculate(monkey_id: &str, ids: &HashMap<String, usize>, monkeys: &[Monkey]) -> i64 {
     let monkey = &monkeys[*ids.get(monkey_id).unwrap()];
     match &monkey.op {
-        Operation::Sum(m1, m2) => return calculate(m1, ids, monkeys) + calculate(m2, ids, monkeys),
-        Operation::Sub(m1, m2) => return calculate(m1, ids, monkeys) - calculate(m2, ids, monkeys),
-        Operation::Mul(m1, m2) => return calculate(m1, ids, monkeys) * calculate(m2, ids, monkeys),
-        Operation::Div(m1, m2) => return calculate(m1, ids, monkeys) / calculate(m2, ids, monkeys),
+        Operation::Sum(m1, m2) => calculate(m1, ids, monkeys) + calculate(m2, ids, monkeys),
+        Operation::Sub(m1, m2) => calculate(m1, ids, monkeys) - calculate(m2, ids, monkeys),
+        Operation::Mul(m1, m2) => calculate(m1, ids, monkeys) * calculate(m2, ids, monkeys),
+        Operation::Div(m1, m2) => calculate(m1, ids, monkeys) / calculate(m2, ids, monkeys),
         Operation::N(n) => *n,
     }
 }
