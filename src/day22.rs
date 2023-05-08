@@ -339,7 +339,7 @@ fn parse_row(input: &str) -> IResult<&str, Vec<Material>> {
                 ' ' => Material::Nothing,
                 '.' => Material::Open,
                 '#' => Material::Wall,
-                e => panic!("error with character {e} in board "),
+                e => panic!("error with character {e} in board"),
             })
             .collect::<Vec<_>>()
     })(input)
@@ -381,6 +381,6 @@ mod tests {
 10R5L5R10L4R5L5";
 
         assert_eq!(do_day22_part1(input), 6032);
-        //No testing for part 2 because the solution is hardcoded for the input :(
     }
+    //No testing for part 2 because the solution is hardcoded for input :(
 }
