@@ -10,7 +10,7 @@ use nom::{character::complete, combinator::all_consuming, Finish, IResult};
 pub fn day22(input_path: &str) {
     let input = std::fs::read_to_string(input_path).expect("Can't read input file");
     let time = Instant::now();
-    
+
     //Part 1
     println!("Password is: {}", do_day22_part1(&input));
     //Part 2
@@ -20,8 +20,7 @@ pub fn day22(input_path: &str) {
 }
 
 fn do_day22_part1(input: &str) -> i32 {
-    
-    let (board,path) = parse_input(input);
+    let (board, path) = parse_input(input);
 
     let mut walker = Walker {
         x: board.data[0..board.nx]
@@ -32,31 +31,150 @@ fn do_day22_part1(input: &str) -> i32 {
         direction: Direction::right(),
     };
 
+    path.into_iter().for_each(|instruction| match instruction {
+        Instruction::Move(n) => {
+            for _ in 0..n {
+                match board.get(walker.x + walker.direction.x, walker.y + walker.direction.y) {
+                    Some(&Material::Wall) => continue,
+                    Some(&Material::Open) => {
+                        walker.step();
+                    }
+                    Some(&Material::Nothing) | None => {
+                        let mut temp_x = walker.x;
+                        let mut temp_y = walker.y;
+                        while let Some(tile) =
+                            board.get(temp_x - walker.direction.x, temp_y - walker.direction.y)
+                        {
+                            if tile == &Material::Nothing {
+                                break;
+                            }
+                            temp_x -= walker.direction.x;
+                            temp_y -= walker.direction.y;
+                        }
+                        if board.get(temp_x, temp_y) != Some(&Material::Wall) {
+                            walker.x = temp_x;
+                            walker.y = temp_y;
+                        }
+                    }
+                }
+            }
+        }
+        Instruction::R => {
+            walker.direction.clockwise();
+        }
+        Instruction::L => {
+            walker.direction.anticlockwise();
+        }
+    });
+    walker.get_password()
+}
+
+fn do_day22_part2(input: &str) -> i32 {
+    let (board, path) = parse_input(input);
+
+    let mut walker = Walker {
+        x: board.data[0..board.nx]
+            .iter()
+            .position(|m| m == &Material::Open)
+            .expect("No open tiles in first row") as i32,
+        y: 0,
+        direction: Direction::right(),
+    };
+
+    let face_length = (board.nx / 3) as i32;
+
     path.into_iter().for_each(|instruction| {
         match instruction {
             Instruction::Move(n) => {
                 for _ in 0..n {
-                    match board.get(
-                        walker.x + walker.direction.x,
-                        walker.y + walker.direction.y,
-                    ) {
+                    match board.get(walker.x + walker.direction.x, walker.y + walker.direction.y) {
                         Some(&Material::Wall) => continue,
                         Some(&Material::Open) => {
                             walker.step();
                         }
                         Some(&Material::Nothing) | None => {
-                            let mut temp_x = walker.x;
-                            let mut temp_y = walker.y;
-                            while let Some(tile) = board.get(temp_x - walker.direction.x, temp_y - walker.direction.y) {
-                                if tile == &Material::Nothing {
-                                    break;
-                                }
-                                temp_x -= walker.direction.x;
-                                temp_y -= walker.direction.y;
-                            }
+                            let current_board = match (
+                                3 * walker.x as usize / board.nx,
+                                4 * walker.y as usize / board.ny,
+                            ) {
+                                (1, 0) => 1,
+                                (2, 0) => 2,
+                                (1, 1) => 3,
+                                (0, 2) => 4,
+                                (1, 2) => 5,
+                                (0, 3) => 6,
+                                _ => panic!("out of bounds"),
+                            };
+                            //Facing is 0 for right, 1 for down, 2 for left, and 3 for up
+                            let (temp_x, temp_y, temp_direction) =
+                                match (current_board, walker.direction.get_value()) {
+                                    (1, 2) => {
+                                        (0, 3 * face_length - 1 - walker.y, Direction::right())
+                                    }
+                                    (1, 3) => (
+                                        0,
+                                        3 * face_length + walker.x - face_length,
+                                        Direction::right(),
+                                    ),
+                                    (2, 3) => (
+                                        walker.x - face_length * 2,
+                                        face_length * 4 - 1,
+                                        Direction::up(),
+                                    ),
+                                    (2, 0) => (
+                                        2 * face_length - 1,
+                                        3 * face_length - 1 - walker.y,
+                                        Direction::left(),
+                                    ),
+                                    (2, 1) => (
+                                        2 * face_length - 1,
+                                        walker.x - 2 * face_length + face_length,
+                                        Direction::left(),
+                                    ),
+                                    (3, 2) => {
+                                        (walker.y - face_length, 2 * face_length, Direction::down())
+                                    }
+                                    (3, 0) => (
+                                        walker.y - face_length + 2 * face_length,
+                                        face_length - 1,
+                                        Direction::up(),
+                                    ),
+                                    (4, 2) => (
+                                        face_length,
+                                        3 * face_length - 1 - walker.y,
+                                        Direction::right(),
+                                    ),
+                                    (4, 3) => {
+                                        (face_length, walker.x + face_length, Direction::right())
+                                    }
+                                    (5, 0) => (
+                                        3 * face_length - 1,
+                                        3 * face_length - 1 - walker.y,
+                                        Direction::left(),
+                                    ),
+                                    (5, 1) => (
+                                        face_length - 1,
+                                        walker.x - face_length + 3 * face_length,
+                                        Direction::left(),
+                                    ),
+                                    (6, 2) => (
+                                        walker.y - 3 * face_length + face_length,
+                                        0,
+                                        Direction::down(),
+                                    ),
+                                    (6, 1) => (walker.x + 2 * face_length, 0, Direction::down()),
+                                    (6, 0) => (
+                                        walker.y - 3 * face_length + face_length,
+                                        3 * face_length - 1,
+                                        Direction::up(),
+                                    ),
+                                    _ => panic!("impossible maneuver"),
+                                };
+
                             if board.get(temp_x, temp_y) != Some(&Material::Wall) {
                                 walker.x = temp_x;
                                 walker.y = temp_y;
+                                walker.direction = temp_direction;
                             }
                         }
                     }
@@ -69,87 +187,11 @@ fn do_day22_part1(input: &str) -> i32 {
                 walker.direction.anticlockwise();
             }
         }
-        //println!("x: {}, y: {}, next_material: {:?}", walker.x,walker.y, board.get(walker.x+walker.direction[0], walker.y+walker.direction[1]));
     });
     walker.get_password()
 }
 
-fn do_day22_part2(input: &str) -> i32 {
-    let (board,path) = parse_input(input);
-    
-        let mut walker = Walker {
-            x: board.data[0..board.nx]
-                .iter()
-                .position(|m| m == &Material::Open)
-                .expect("No open tiles in first row") as i32,
-            y: 0,
-            direction: Direction::right(),
-        };
-
-        let face_length = (board.nx/3) as i32;
-    
-        path.into_iter().for_each(|instruction| {
-            match instruction {
-                Instruction::Move(n) => {
-                    for _ in 0..n {
-                        match board.get(
-                            walker.x + walker.direction.x,
-                            walker.y + walker.direction.y,
-                        ) {
-                            Some(&Material::Wall) => continue,
-                            Some(&Material::Open) => {
-                               walker.step();
-                            }
-                            Some(&Material::Nothing) | None => {
-                                let current_board = match (3*walker.x as usize/board.nx , 4*walker.y as usize/board.ny){
-                                    (1,0)=>1,
-                                    (2,0)=>2,
-                                    (1,1)=>3,
-                                    (0,2)=>4,
-                                    (1,2)=>5,
-                                    (0,3)=>6,
-                                    _=>panic!("out of bounds")
-                                };
-                                //Facing is 0 for right, 1 for down, 2 for left, and 3 for up
-                                let (temp_x,temp_y, temp_direction) = match (current_board,walker.direction.get_value()){
-                                    (1, 2)=>(0,3*face_length-1-walker.y, Direction::right()),
-                                    (1,3)=>(0,3*face_length+walker.x-face_length, Direction::right()),
-                                    (2,3)=>(walker.x-face_length*2, face_length*4-1, Direction::up()),
-                                    (2,0)=>(2*face_length-1, 3*face_length-1-walker.y, Direction::left()),
-                                    (2,1)=>(2*face_length-1, walker.x-2*face_length+face_length, Direction::left()),
-                                    (3,2)=>(walker.y-face_length,2*face_length,Direction::down()),
-                                    (3,0)=>(walker.y-face_length+2*face_length,face_length-1, Direction::up()),
-                                    (4,2)=>(face_length, 3*face_length-1-walker.y, Direction::right()),
-                                    (4,3)=>(face_length, walker.x+face_length, Direction::right()),
-                                    (5,0)=>(3*face_length-1,3*face_length-1-walker.y, Direction::left()),
-                                    (5,1)=>(face_length-1,walker.x-face_length+3*face_length, Direction::left()),
-                                    (6,2)=>(walker.y-3*face_length+face_length,0,Direction::down()),
-                                    (6,1)=>(walker.x+2*face_length,0,Direction::down()),
-                                    (6,0)=>(walker.y-3*face_length+face_length, 3*face_length-1, Direction::up()),
-                                    _=>panic!("impossible maneuver")
-                                };
-
-                                if board.get(temp_x, temp_y) != Some(&Material::Wall) {
-                                    walker.x = temp_x;
-                                    walker.y = temp_y;
-                                    walker.direction = temp_direction;
-                                }
-                            }
-                        }
-                    }
-                }
-                Instruction::R => {
-                    walker.direction.clockwise();
-                }
-                Instruction::L => {
-                    walker.direction.anticlockwise();
-                }
-            }
-        });
-        walker.get_password()
-    }
-
-fn parse_input(input: &str)->(Grid, Vec<Instruction>){
+fn parse_input(input: &str) -> (Grid, Vec<Instruction>) {
     let mut lines = input.lines();
     let parsed_points = (&mut lines)
         .map_while(|line| {
@@ -165,8 +207,8 @@ fn parse_input(input: &str)->(Grid, Vec<Instruction>){
     let path = lines
         .flat_map(|line| all_consuming(parse_path)(line).finish().unwrap().1)
         .collect::<Vec<Instruction>>();
-    (board,path)
-    }
+    (board, path)
+}
 
 struct Grid {
     data: Vec<Material>,
@@ -194,14 +236,14 @@ impl Grid {
             ny,
         }
     }
-    
+
     fn get(&self, x: i32, y: i32) -> Option<&Material> {
         if x >= self.nx as i32 {
             return None;
         }
         let x_us = usize::try_from(x).ok()?;
-    let y_us = usize::try_from(y).ok()?;
-    self.data.get(x_us + y_us * self.nx)
+        let y_us = usize::try_from(y).ok()?;
+        self.data.get(x_us + y_us * self.nx)
         //self.data.get(x as usize + y as usize * self.nx)
     }
 }
@@ -236,51 +278,51 @@ struct Walker {
     direction: Direction,
 }
 
-impl Walker{
-    fn step(&mut self){
+impl Walker {
+    fn step(&mut self) {
         self.x += self.direction.x;
         self.y += self.direction.y;
     }
-    fn get_password(&self)->i32{
-        (self.y + 1) * 1000 + 4 * (self.x + 1)+self.direction.get_value()
+    fn get_password(&self) -> i32 {
+        (self.y + 1) * 1000 + 4 * (self.x + 1) + self.direction.get_value()
     }
 }
 
 #[derive(Debug)]
-struct Direction{
+struct Direction {
     x: i32,
     y: i32,
 }
 
-impl Direction{
-    fn right()->Self{
-        Self{x:1,y:0}
+impl Direction {
+    fn right() -> Self {
+        Self { x: 1, y: 0 }
     }
-    fn down()->Self{
-        Self{x:0,y:1}
+    fn down() -> Self {
+        Self { x: 0, y: 1 }
     }
-    fn left()->Self{
-        Self{x:-1,y:0}
+    fn left() -> Self {
+        Self { x: -1, y: 0 }
     }
-    fn up()->Self{
-        Self{x:0,y:-1}
+    fn up() -> Self {
+        Self { x: 0, y: -1 }
     }
-    fn get_value(&self)->i32{
-        match(self.x,self.y){
-            (1,0)=>0,
-            (0,1)=>1,
-            (-1,0)=>2,
-            (0,-1)=>3,
-            _=>panic!("Impossible direction")
+    fn get_value(&self) -> i32 {
+        match (self.x, self.y) {
+            (1, 0) => 0,
+            (0, 1) => 1,
+            (-1, 0) => 2,
+            (0, -1) => 3,
+            _ => panic!("Impossible direction"),
         }
     }
-    fn clockwise(&mut self){
-        std::mem::swap(&mut self.x,&mut self.y);
-        self.x*=-1;
+    fn clockwise(&mut self) {
+        std::mem::swap(&mut self.x, &mut self.y);
+        self.x *= -1;
     }
-    fn anticlockwise(&mut self){
-        std::mem::swap(&mut self.x,&mut self.y);
-        self.y*=-1;
+    fn anticlockwise(&mut self) {
+        std::mem::swap(&mut self.x, &mut self.y);
+        self.y *= -1;
     }
 }
 
