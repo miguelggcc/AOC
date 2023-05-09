@@ -25,8 +25,8 @@ fn do_day22_part1(input: &str) -> i32 {
     let mut walker = Walker {
         x: board.data[0..board.nx]
             .iter()
-            .position(|m| m == &Material::Open)
-            .expect("No open tiles in first row") as i32,
+            .position(|t| t == &Tile::Open)
+            .expect("no open tiles in first row") as i32,
         y: 0,
         direction: Direction::right(),
     };
@@ -35,23 +35,23 @@ fn do_day22_part1(input: &str) -> i32 {
         Instruction::Move(n) => {
             for _ in 0..n {
                 match board.get(walker.x + walker.direction.x, walker.y + walker.direction.y) {
-                    Some(&Material::Wall) => continue,
-                    Some(&Material::Open) => {
+                    Some(&Tile::Wall) => continue,
+                    Some(&Tile::Open) => {
                         walker.step();
                     }
-                    Some(&Material::Nothing) | None => {
+                    Some(&Tile::Nothing) | None => {
                         let mut temp_x = walker.x;
                         let mut temp_y = walker.y;
                         while let Some(tile) =
                             board.get(temp_x - walker.direction.x, temp_y - walker.direction.y)
                         {
-                            if tile == &Material::Nothing {
+                            if tile == &Tile::Nothing {
                                 break;
                             }
                             temp_x -= walker.direction.x;
                             temp_y -= walker.direction.y;
                         }
-                        if board.get(temp_x, temp_y) != Some(&Material::Wall) {
+                        if board.get(temp_x, temp_y) != Some(&Tile::Wall) {
                             walker.x = temp_x;
                             walker.y = temp_y;
                         }
@@ -75,8 +75,8 @@ fn do_day22_part2(input: &str) -> i32 {
     let mut walker = Walker {
         x: board.data[0..board.nx]
             .iter()
-            .position(|m| m == &Material::Open)
-            .expect("No open tiles in first row") as i32,
+            .position(|t| t == &Tile::Open)
+            .expect("no open tiles in first row") as i32,
         y: 0,
         direction: Direction::right(),
     };
@@ -88,12 +88,12 @@ fn do_day22_part2(input: &str) -> i32 {
             Instruction::Move(n) => {
                 for _ in 0..n {
                     match board.get(walker.x + walker.direction.x, walker.y + walker.direction.y) {
-                        Some(&Material::Wall) => continue,
-                        Some(&Material::Open) => {
+                        Some(&Tile::Wall) => continue,
+                        Some(&Tile::Open) => {
                             walker.step();
                         }
-                        Some(&Material::Nothing) | None => {
-                            let current_board = match (
+                        Some(&Tile::Nothing) | None => {
+                            let current_face = match (
                                 3 * walker.x as usize / board.nx,
                                 4 * walker.y as usize / board.ny,
                             ) {
@@ -107,7 +107,7 @@ fn do_day22_part2(input: &str) -> i32 {
                             };
                             //Facing is 0 for right, 1 for down, 2 for left, and 3 for up
                             let (temp_x, temp_y, temp_direction) =
-                                match (current_board, walker.direction.get_value()) {
+                                match (current_face, walker.direction.get_value()) {
                                     (1, 2) => {
                                         (0, 3 * face_length - 1 - walker.y, Direction::right())
                                     }
@@ -171,7 +171,7 @@ fn do_day22_part2(input: &str) -> i32 {
                                     _ => panic!("impossible maneuver"),
                                 };
 
-                            if board.get(temp_x, temp_y) != Some(&Material::Wall) {
+                            if board.get(temp_x, temp_y) != Some(&Tile::Wall) {
                                 walker.x = temp_x;
                                 walker.y = temp_y;
                                 walker.direction = temp_direction;
@@ -211,19 +211,19 @@ fn parse_input(input: &str) -> (Grid, Vec<Instruction>) {
 }
 
 struct Grid {
-    data: Vec<Material>,
+    data: Vec<Tile>,
     nx: usize,
     ny: usize,
 }
 
 impl Grid {
-    fn build(rock_points: &[Vec<Material>]) -> Self {
+    fn build(rock_points: &[Vec<Tile>]) -> Self {
         let nx = rock_points
             .iter()
             .fold(0, |max_x, row| max_x.max(row.len()));
         let ny: usize = rock_points.len();
 
-        let mut grid_data = vec![Material::Nothing; nx * ny];
+        let mut grid_data = vec![Tile::Nothing; nx * ny];
 
         rock_points
             .iter()
@@ -237,7 +237,7 @@ impl Grid {
         }
     }
 
-    fn get(&self, x: i32, y: i32) -> Option<&Material> {
+    fn get(&self, x: i32, y: i32) -> Option<&Tile> {
         if x >= self.nx as i32 {
             return None;
         }
@@ -252,9 +252,9 @@ impl fmt::Display for Grid {
         for j in 0..self.ny {
             for i in 0..self.nx {
                 let c = match self.data[i + j * self.nx] {
-                    Material::Wall => '#',
-                    Material::Open => '.',
-                    Material::Nothing => ' ',
+                    Tile::Wall => '#',
+                    Tile::Open => '.',
+                    Tile::Nothing => ' ',
                 };
                 write!(f, "{c}")?;
             }
@@ -265,7 +265,7 @@ impl fmt::Display for Grid {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-enum Material {
+enum Tile {
     Wall,
     Open,
     Nothing,
@@ -283,7 +283,7 @@ impl Walker {
         self.y += self.direction.y;
     }
     fn get_password(&self) -> i32 {
-        (self.y + 1) * 1000 + 4 * (self.x + 1) + self.direction.get_value()
+        1000 * (self.y + 1) + 4 * (self.x + 1) + self.direction.get_value()
     }
 }
 
@@ -312,7 +312,7 @@ impl Direction {
             (0, 1) => 1,
             (-1, 0) => 2,
             (0, -1) => 3,
-            _ => panic!("Impossible direction"),
+            _ => panic!("impossible direction"),
         }
     }
     fn clockwise(&mut self) {
@@ -332,13 +332,13 @@ enum Instruction {
     L,
 }
 
-fn parse_row(input: &str) -> IResult<&str, Vec<Material>> {
-    map(is_a(" #."), |r: &str| {
+fn parse_row(input: &str) -> IResult<&str, Vec<Tile>> {
+    map(is_a(" .#"), |r: &str| {
         r.chars()
             .map(|c| match c {
-                ' ' => Material::Nothing,
-                '.' => Material::Open,
-                '#' => Material::Wall,
+                ' ' => Tile::Nothing,
+                '.' => Tile::Open,
+                '#' => Tile::Wall,
                 e => panic!("error with character {e} in board"),
             })
             .collect::<Vec<_>>()
