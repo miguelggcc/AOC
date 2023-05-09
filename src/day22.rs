@@ -193,7 +193,7 @@ fn do_day22_part2(input: &str) -> i32 {
 
 fn parse_input(input: &str) -> (Grid, Vec<Instruction>) {
     let mut lines = input.lines();
-    let parsed_points = (&mut lines)
+    let parsed_rows = (&mut lines)
         .map_while(|line| {
             all_consuming(parse_row)(line)
                 .finish()
@@ -202,7 +202,7 @@ fn parse_input(input: &str) -> (Grid, Vec<Instruction>) {
         })
         .collect::<Vec<_>>();
 
-    let board = Grid::build(&parsed_points);
+    let board = Grid::build(&parsed_rows);
 
     let path = lines
         .flat_map(|line| all_consuming(parse_path)(line).finish().unwrap().1)
@@ -217,15 +217,15 @@ struct Grid {
 }
 
 impl Grid {
-    fn build(rock_points: &[Vec<Tile>]) -> Self {
-        let nx = rock_points
+    fn build(rows: &[Vec<Tile>]) -> Self {
+        let nx = rows
             .iter()
             .fold(0, |max_x, row| max_x.max(row.len()));
-        let ny: usize = rock_points.len();
+        let ny: usize = rows.len();
 
         let mut grid_data = vec![Tile::Nothing; nx * ny];
 
-        rock_points
+        rows
             .iter()
             .enumerate()
             .for_each(|(j, row)| grid_data[j * nx..j * nx + row.len()].copy_from_slice(row));
