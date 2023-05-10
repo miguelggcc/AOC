@@ -35,7 +35,8 @@ fn do_day23_part1(input: &str) -> usize {
         elves.iter().for_each(|pos| {
             let new_pos = try_move(pos.0, pos.1, &elves, &dirs);
             if let Some(other_pos) = positions.remove(&new_pos) {
-                positions.extend([(*pos, *pos), (other_pos, other_pos)].into_iter());
+                positions.insert(*pos, *pos);
+                positions.insert(other_pos, other_pos);
             } else {
                 positions.insert(new_pos, *pos);
             }
