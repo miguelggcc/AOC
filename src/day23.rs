@@ -27,21 +27,16 @@ fn do_day23_part1(input: &str) -> usize {
         })
         .flatten()
         .collect();
-    let mut dirs = vec![
-        Direction::North,
-        Direction::South,
-        Direction::West,
-        Direction::East,
-    ];
+    let mut dirs = vec![Direction::N, Direction::S, Direction::W, Direction::E];
     let mut positions = HashMap::with_capacity(elves.len());
 
     for _ in 0..10 {
         elves.iter().for_each(|pos| {
-            let new_position = try_move(pos.0, pos.1, &elves, &dirs);
-            if let Some(value) = positions.remove(&new_position) {
-                positions.extend([(*pos, *pos), (value, value)].into_iter());
+            let new_pos = try_move(pos.0, pos.1, &elves, &dirs);
+            if let Some(other_pos) = positions.remove(&new_pos) {
+                positions.extend([(*pos, *pos), (other_pos, other_pos)].into_iter());
             } else {
-                positions.insert(new_position, *pos);
+                positions.insert(new_pos, *pos);
             }
         });
 
@@ -89,7 +84,7 @@ fn try_move(x: i32, y: i32, others: &HashSet<Point>, dirs: &[Direction]) -> Poin
     }
     for dir in dirs {
         match dir {
-            Direction::North => {
+            Direction::N => {
                 if !DELTAS
                     .iter()
                     .take(3)
@@ -98,7 +93,7 @@ fn try_move(x: i32, y: i32, others: &HashSet<Point>, dirs: &[Direction]) -> Poin
                     return (x, y - 1);
                 }
             }
-            Direction::South => {
+            Direction::S => {
                 if !DELTAS
                     .iter()
                     .take(3)
@@ -107,7 +102,7 @@ fn try_move(x: i32, y: i32, others: &HashSet<Point>, dirs: &[Direction]) -> Poin
                     return (x, y + 1);
                 }
             }
-            Direction::West => {
+            Direction::W => {
                 if !DELTAS
                     .iter()
                     .take(3)
@@ -116,7 +111,7 @@ fn try_move(x: i32, y: i32, others: &HashSet<Point>, dirs: &[Direction]) -> Poin
                     return (x - 1, y);
                 }
             }
-            Direction::East => {
+            Direction::E => {
                 if !DELTAS
                     .iter()
                     .take(3)
@@ -143,10 +138,10 @@ let mut grid = vec![vec!['.'; (1 + max_x - min_x) as usize]; (1 + max_y - min_y)
 
 #[derive(Debug)]
 enum Direction {
-    North,
-    South,
-    West,
-    East,
+    N,
+    S,
+    W,
+    E,
 }
 
 #[cfg(test)]
