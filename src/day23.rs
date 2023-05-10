@@ -43,8 +43,7 @@ fn do_day23_part1(input: &str) -> usize {
         });
 
         elves.clear();
-        elves.extend(positions.keys().copied());
-        positions.clear();
+        elves.extend(positions.drain().map(|(k,_)|k));
         dirs.rotate_left(1);
     }
     let (min_x, max_x, min_y, max_y) = elves.iter().fold(
@@ -96,8 +95,7 @@ fn do_day23_part2(input: &str) -> i16 {
         }
 
         elves.clear();
-        elves.extend(positions.keys().copied());
-        positions.clear();
+        elves.extend(positions.drain().map(|(k,_)|k));
         dirs.rotate_left(1);
         total+=1;
     }
