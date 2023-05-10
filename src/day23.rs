@@ -10,11 +10,11 @@ pub fn day23(input_path: &str) {
     println!("Empty ground tiles: {}", do_day23_part1(&input));
     println!("{:?}", time.elapsed());
 
-    /*let time = Instant::now();
+    let time = Instant::now();
     //Part 2
     println!("Part 2, password is: {}", do_day23_part2(&input));
 
-    println!("{:?}", time.elapsed());*/
+    println!("{:?}", time.elapsed());
 }
 
 fn do_day23_part1(input: &str) -> usize {
