@@ -18,16 +18,7 @@ pub fn day23(input_path: &str) {
 }
 
 fn do_day23_part1(input: &str) -> usize {
-    let mut elves: HashSet<_> = input
-        .lines()
-        .enumerate()
-        .map(|(j, l)| {
-            l.char_indices()
-                .filter(|(_, c)| c == &'#')
-                .map(move |(i, _)| (i as i16, j as i16))
-        })
-        .flatten()
-        .collect();
+    let mut elves = parse_input(input);
     let mut dirs = vec![Direction::N, Direction::S, Direction::W, Direction::E];
     let mut positions = HashMap::with_capacity(elves.len());
 
@@ -43,7 +34,7 @@ fn do_day23_part1(input: &str) -> usize {
         });
 
         elves.clear();
-        elves.extend(positions.drain().map(|(k,_)|k));
+        elves.extend(positions.drain().map(|(k, _)| k));
         dirs.rotate_left(1);
     }
     let (min_x, max_x, min_y, max_y) = elves.iter().fold(
@@ -61,16 +52,7 @@ fn do_day23_part1(input: &str) -> usize {
 }
 
 fn do_day23_part2(input: &str) -> i16 {
-    let mut elves: HashSet<_> = input
-        .lines()
-        .enumerate()
-        .map(|(j, l)| {
-            l.char_indices()
-                .filter(|(_, c)| c == &'#')
-                .map(move |(i, _)| (i as i16, j as i16))
-        })
-        .flatten()
-        .collect();
+    let mut elves = parse_input(input);
     let mut dirs = vec![Direction::N, Direction::S, Direction::W, Direction::E];
     let mut positions = HashMap::with_capacity(elves.len());
     let mut total = 1;
@@ -80,26 +62,26 @@ fn do_day23_part2(input: &str) -> i16 {
         elves.iter().for_each(|pos| {
             let new_pos = try_move(pos.0, pos.1, &elves, &dirs);
             if let Some(other_pos) = positions.remove(&new_pos) {
-                moved_elves-=1;
+                moved_elves -= 1;
                 positions.extend([(*pos, *pos), (other_pos, other_pos)].into_iter());
             } else {
-                if &new_pos!=pos{
-                moved_elves+=1;
+                if &new_pos != pos {
+                    moved_elves += 1;
                 }
                 positions.insert(new_pos, *pos);
             }
         });
 
-        if moved_elves==0{
+        if moved_elves == 0 {
             break;
         }
 
         elves.clear();
-        elves.extend(positions.drain().map(|(k,_)|k));
+        elves.extend(positions.drain().map(|(k, _)| k));
         dirs.rotate_left(1);
-        total+=1;
+        total += 1;
     }
-total
+    total
 }
 
 type Point = (i16, i16);
@@ -162,6 +144,19 @@ fn try_move(x: i16, y: i16, others: &HashSet<Point>, dirs: &[Direction]) -> Poin
         }
     }
     (x, y)
+}
+
+fn parse_input(input: &str) -> HashSet<Point> {
+    input
+        .lines()
+        .enumerate()
+        .map(|(j, l)| {
+            l.char_indices()
+                .filter(|(_, c)| c == &'#')
+                .map(move |(i, _)| (i as i16, j as i16))
+        })
+        .flatten()
+        .collect()
 }
 
 /*fn display_grid(elves: &[Point], min_x: i16, max_x: i16, min_y: i16, max_y: i16){
