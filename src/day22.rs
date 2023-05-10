@@ -218,15 +218,12 @@ struct Grid {
 
 impl Grid {
     fn build(rows: &[Vec<Tile>]) -> Self {
-        let nx = rows
-            .iter()
-            .fold(0, |max_x, row| max_x.max(row.len()));
+        let nx = rows.iter().fold(0, |max_x, row| max_x.max(row.len()));
         let ny: usize = rows.len();
 
         let mut grid_data = vec![Tile::Nothing; nx * ny];
 
-        rows
-            .iter()
+        rows.iter()
             .enumerate()
             .for_each(|(j, row)| grid_data[j * nx..j * nx + row.len()].copy_from_slice(row));
 
