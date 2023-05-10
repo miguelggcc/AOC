@@ -12,7 +12,7 @@ pub fn day23(input_path: &str) {
 
     let time = Instant::now();
     //Part 2
-    println!("Part 2, password is: {}", do_day23_part2(&input));
+    println!("Number of rounds {}", do_day23_part2(&input));
 
     println!("{:?}", time.elapsed());
 }
