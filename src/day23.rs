@@ -8,9 +8,8 @@ pub fn day23(input_path: &str) {
     let time = Instant::now();
 
     //Part 1
-    //for _ in 0..100{
     println!("Empty ground tiles: {}", do_day23_part1(&input));
-    //}
+
     //Part 2
     //println!("Part 2, password is: {}", do_day23_part2(&input));
 
@@ -22,8 +21,7 @@ fn do_day23_part1(input: &str) -> usize {
         .lines()
         .enumerate()
         .map(|(j, l)| {
-            l.chars()
-                .enumerate()
+            l.char_indices()
                 .filter(|(_, c)| c == &'#')
                 .map(move |(i, _)| (i as i32, j as i32))
         })
@@ -39,21 +37,18 @@ fn do_day23_part1(input: &str) -> usize {
 
     for _ in 0..10 {
         elves.iter().for_each(|pos| {
-            if let Some(new_position) = try_move(&pos.0, &pos.1, &elves, &dirs) {
-                if let Some(value) = positions.remove(&new_position) {
-                    positions.extend([(*pos, *pos), (value, value)].into_iter());
-                } else {
-                    positions.insert(new_position, *pos);
-                }
+            let new_position = try_move(pos.0, pos.1, &elves, &dirs);
+            if let Some(value) = positions.remove(&new_position) {
+                positions.extend([(*pos, *pos), (value, value)].into_iter());
             } else {
-                positions.insert(*pos, *pos);
+                positions.insert(new_position, *pos);
             }
         });
 
         elves.clear();
         elves.extend(positions.keys().copied());
-        dirs.rotate_left(1);
         positions.clear();
+        dirs.rotate_left(1);
     }
     let (min_x, max_x, min_y, max_y) = elves.iter().fold(
         (i32::MAX, i32::MIN, i32::MAX, i32::MIN),
@@ -85,63 +80,54 @@ const DELTAS: [Point; 8] = [
     (1, 1),
 ];
 
-fn try_move(x: &i32, y: &i32, others: &HashSet<Point>, dirs: &[Direction]) -> Option<Point> {
+fn try_move(x: i32, y: i32, others: &HashSet<Point>, dirs: &[Direction]) -> Point {
+    if !DELTAS
+        .iter()
+        .any(|(dx, dy)| others.contains(&(x + dx, y + dy)))
+    {
+        return (x, y);
+    }
     for dir in dirs {
-        let (collision_dir, collision_rest) = match dir {
-            Direction::North => (
-                DELTAS
+        match dir {
+            Direction::North => {
+                if !DELTAS
                     .iter()
                     .take(3)
-                    .any(|(dx, dy)| others.contains(&(x + dx, y + dy))),
-                DELTAS
-                    .iter()
-                    .skip(3)
-                    .any(|(dx, dy)| others.contains(&(x + dx, y + dy))),
-            ),
-            Direction::South => (
-                DELTAS
-                    .iter()
-                    .take(3)
-                    .any(|(dx, dy)| others.contains(&(x + dx, y - dy))),
-                DELTAS
-                    .iter()
-                    .skip(3)
-                    .any(|(dx, dy)| others.contains(&(x + dx, y - dy))),
-            ),
-            Direction::West => (
-                DELTAS
+                    .any(|(dx, dy)| others.contains(&(x + dx, y + dy)))
+                {
+                    return (x, y - 1);
+                }
+            }
+            Direction::South => {
+                if !DELTAS
                     .iter()
                     .take(3)
-                    .any(|(dy, dx)| others.contains(&(x + dx, y - dy))),
-                DELTAS
-                    .iter()
-                    .skip(3)
-                    .any(|(dy, dx)| others.contains(&(x + dx, y - dy))),
-            ),
-            Direction::East => (
-                DELTAS
+                    .any(|(dx, dy)| others.contains(&(x + dx, y - dy)))
+                {
+                    return (x, y + 1);
+                }
+            }
+            Direction::West => {
+                if !DELTAS
                     .iter()
                     .take(3)
-                    .any(|(dy, dx)| others.contains(&(x - dx, y + dy))),
-                DELTAS
+                    .any(|(dy, dx)| others.contains(&(x + dx, y - dy)))
+                {
+                    return (x - 1, y);
+                }
+            }
+            Direction::East => {
+                if !DELTAS
                     .iter()
-                    .skip(3)
-                    .any(|(dy, dx)| others.contains(&(x - dx, y + dy))),
-            ),
-        };
-        if !collision_dir && !collision_rest {
-            return None;
-        }
-        if !collision_dir {
-            return match dir {
-                Direction::North => Some((*x, y - 1)),
-                Direction::South => Some((*x, y + 1)),
-                Direction::West => Some((x - 1, *y)),
-                Direction::East => Some((x + 1, *y)),
-            };
+                    .take(3)
+                    .any(|(dy, dx)| others.contains(&(x - dx, y + dy)))
+                {
+                    return (x + 1, y);
+                }
+            }
         }
     }
-    None
+    (x, y)
 }
 
 /*fn display_grid(elves: &[Point], min_x: i32, max_x: i32, min_y: i32, max_y: i32){
@@ -180,5 +166,4 @@ mod tests {
 
         assert_eq!(do_day23_part1(input), 110);
     }
-    //No testing for part 2 because the solution is hardcoded for input :(
 }
