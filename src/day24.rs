@@ -64,8 +64,9 @@ fn do_bfs(
             max_time = time;
         }
         for next_pos in get_neighbours(pos, width, height).chain(once(pos)) {
-            if !forbidden_pos.contains(&get_bits(time, next_pos)) {
-                forbidden_pos.insert(get_bits(time, next_pos));
+            let state = get_bits(time, next_pos);
+            if !forbidden_pos.contains(&state) {
+                forbidden_pos.insert(state);
                 if next_pos == exit {
                     return time + 1;
                 }
@@ -76,13 +77,13 @@ fn do_bfs(
     panic!("path not found");
 }
 
-type Point = (usize, usize);
-const DELTAS: [(i16, i16); 4] = [(0, -1), (-1, 0), (1, 0), (0, 1)];
-
 #[inline(always)]
 fn get_bits(time: usize, pos: Point) -> u32 {
     time as u32 + ((pos.0 as u32) << 16) + ((pos.1 as u32) << 24)
 }
+
+type Point = (usize, usize);
+const DELTAS: [(i16, i16); 4] = [(0, 1), (1, 0), (-1, 0), (0, -1)];
 
 fn get_neighbours(pos: Point, width: usize, height: usize) -> impl Iterator<Item = Point> {
     DELTAS
@@ -131,28 +132,31 @@ fn parse_input(input: &str) -> (Point, Point, Vec<Blizzard>, usize, usize) {
         lines[0]
             .chars()
             .position(|c| c == '.')
-            .expect("no start position") as usize,
+            .expect("no start position"),
         0,
     );
 
-    let exit_x = lines
-        .pop()
-        .unwrap()
-        .chars()
-        .position(|c| c == '.')
-        .expect("no exit position") as usize;
+    let exit = (
+        lines
+            .pop()
+            .unwrap()
+            .chars()
+            .position(|c| c == '.')
+            .expect("no exit position"),
+        lines.len(),
+    );
 
     let blizzards: Vec<_> = lines
         .iter()
         .enumerate()
         .skip(1)
-        .flat_map(|(j, l)| {
+        .flat_map(|(y, l)| {
             l.char_indices()
                 .skip(1)
                 .filter(|(_, c)| c != &'#' && c != &'.')
-                .map(move |(i, c)| Blizzard {
-                    x: i as usize,
-                    y: j as usize,
+                .map(move |(x, c)| Blizzard {
+                    x,
+                    y,
                     direction: match c {
                         '>' => Direction::E,
                         '<' => Direction::W,
@@ -163,13 +167,7 @@ fn parse_input(input: &str) -> (Point, Point, Vec<Blizzard>, usize, usize) {
                 })
         })
         .collect();
-    (
-        start,
-        (exit_x, lines.len() as usize),
-        blizzards,
-        width as usize,
-        height as usize,
-    )
+    (start, exit, blizzards, width, height)
 }
 
 #[cfg(test)]
