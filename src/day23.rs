@@ -21,10 +21,12 @@ fn do_day23_part1(input: &str) -> usize {
     let mut elves = parse_input(input);
     let mut dirs = vec![Direction::N, Direction::S, Direction::W, Direction::E];
     let mut positions = HashMap::with_capacity(elves.len());
+    let mut is_free = Vec::with_capacity(8);
 
     for _ in 0..10 {
         elves.iter().for_each(|pos| {
-            let new_pos = try_move(pos.0, pos.1, &elves, &dirs);
+            let new_pos = try_move(pos.0, pos.1, &elves, &dirs, &mut is_free);
+            is_free.clear();
             if let Some(other_pos) = positions.remove(&new_pos) {
                 positions.insert(*pos, *pos);
                 positions.insert(other_pos, other_pos);
@@ -55,12 +57,14 @@ fn do_day23_part2(input: &str) -> i16 {
     let mut elves = parse_input(input);
     let mut dirs = vec![Direction::N, Direction::S, Direction::W, Direction::E];
     let mut positions = HashMap::with_capacity(elves.len());
+    let mut is_free = Vec::with_capacity(8);
     let mut total = 1;
     loop {
         let mut moved_elves = 0;
 
         elves.iter().for_each(|pos| {
-            let new_pos = try_move(pos.0, pos.1, &elves, &dirs);
+            let new_pos = try_move(pos.0, pos.1, &elves, &dirs, &mut is_free);
+            is_free.clear();
             if let Some(other_pos) = positions.remove(&new_pos) {
                 moved_elves -= 1;
                 positions.extend([(*pos, *pos), (other_pos, other_pos)].into_iter());
@@ -96,48 +100,41 @@ const DELTAS: [Point; 8] = [
     (1, 1),
 ];
 
-fn try_move(x: i16, y: i16, others: &HashSet<Point>, dirs: &[Direction]) -> Point {
-    if !DELTAS
-        .iter()
-        .any(|(dx, dy)| others.contains(&(x + dx, y + dy)))
-    {
+#[inline(always)]
+fn try_move(
+    x: i16,
+    y: i16,
+    others: &HashSet<Point>,
+    dirs: &[Direction],
+    is_free: &mut Vec<bool>,
+) -> Point {
+    is_free.extend(
+        DELTAS
+            .iter()
+            .map(|(dx, dy)| !others.contains(&(x + dx, y + dy))),
+    );
+    if is_free.iter().all(|c| *c) {
         return (x, y);
     }
     for dir in dirs {
         match dir {
             Direction::N => {
-                if !DELTAS
-                    .iter()
-                    .take(3)
-                    .any(|(dx, dy)| others.contains(&(x + dx, y + dy)))
-                {
+                if is_free[0] && is_free[1] && is_free[2] {
                     return (x, y - 1);
                 }
             }
             Direction::S => {
-                if !DELTAS
-                    .iter()
-                    .take(3)
-                    .any(|(dx, dy)| others.contains(&(x + dx, y - dy)))
-                {
+                if is_free[5] && is_free[6] && is_free[7] {
                     return (x, y + 1);
                 }
             }
             Direction::W => {
-                if !DELTAS
-                    .iter()
-                    .take(3)
-                    .any(|(dy, dx)| others.contains(&(x + dx, y - dy)))
-                {
+                if is_free[0] && is_free[3] && is_free[5] {
                     return (x - 1, y);
                 }
             }
             Direction::E => {
-                if !DELTAS
-                    .iter()
-                    .take(3)
-                    .any(|(dy, dx)| others.contains(&(x - dx, y + dy)))
-                {
+                if is_free[2] && is_free[4] && is_free[7] {
                     return (x + 1, y);
                 }
             }
