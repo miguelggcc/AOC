@@ -147,12 +147,11 @@ fn parse_input(input: &str) -> HashSet<Point> {
     input
         .lines()
         .enumerate()
-        .map(|(j, l)| {
+        .flat_map(|(j, l)| {
             l.char_indices()
                 .filter(|(_, c)| c == &'#')
                 .map(move |(i, _)| (i as i16, j as i16))
         })
-        .flatten()
         .collect()
 }
 
