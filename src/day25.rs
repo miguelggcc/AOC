@@ -34,7 +34,7 @@ fn do_day25_part1(input: &str) -> String {
     let mut out = vec![];
     while decimal > 0 {
         let digit = decimal % 5;
-        out.push(CHARS[(digit) as usize]);
+        out.push(CHARS[digit as usize]);
         decimal = decimal / 5 + digit / 3; // digit / 3 is the carry over
     }
     out.iter().rev().collect()
