@@ -8,29 +8,18 @@ pub fn day17(input_path: &str) {
     let input = std::fs::read_to_string(input_path).expect("Can't find input file");
     //Part 1
     let time = Instant::now();
-    println!("First marker after character {}", do_day17_part1(&input));
+    println!("Final height: {}", do_day17_part1(&input));
     //Part 2
-    /*println!(
-        "Part2: Height {}",
-        do_day17_part2(&input)
-    );    */
+    println!("Part2: final height: {}", do_day17_part2(&input));
     println!("{:?}", time.elapsed());
 }
 
 fn do_day17_part1(input: &str) -> u64 {
-    get_height(input, 74)
+    get_height(input, 2022)
 }
 
 fn do_day17_part2(input: &str) -> u64 {
-    let jet_length = input.len();
-    let rock_length = 5;
-    let big_number = 2022;
-    let mult = rock_length * jet_length as u64 - 1;
-    let division = big_number / (mult);
-    let module = (big_number % (mult)) as u32;
-    dbg!(division, module, mult);
-
-    get_height(input, 0)
+    get_height(input, 1000000000000)
 }
 
 fn get_height(input: &str, n_of_rocks: u64) -> u64 {
@@ -73,21 +62,16 @@ fn get_height(input: &str, n_of_rocks: u64) -> u64 {
             .for_each(|(x, y)| map.toggle(x, y));
         r += 1;
 
-        if height > 7 {
-            let key = u64::from_be_bytes(map.0[height - 8..height].try_into().unwrap());
-            //dbg!(key);
-            if r == 54 {
-                map.display();
-            }
+        if height > 16 {
+            let key = u128::from_be_bytes(map.0[height - 16..height].try_into().unwrap());
 
             match repeated.entry(key) {
                 Entry::Occupied(re) => {
-                    dbg!(key, re.key());
                     let (r0, height0) = re.get();
                     let cycle_r = r - r0;
-                    if cycle_r > 5 {
+
+                    if cycle_r > input.len() as u64 {
                         let n_of_cycles = (n_of_rocks - r) / cycle_r;
-                        dbg!(r, r0, n_of_cycles);
                         cycle_height += (height - height0) as u64 * n_of_cycles;
                         r += cycle_r * n_of_cycles;
                         repeated.clear();
@@ -99,7 +83,6 @@ fn get_height(input: &str, n_of_rocks: u64) -> u64 {
             }
         }
     }
-    map.display();
     height as u64 + cycle_height
 }
 
@@ -242,7 +225,7 @@ impl Map {
         self.0.extend(vec![0; needed_height]);
     }
     fn display(&self) {
-        for j in (0..self.0.len()).rev() {
+        for j in (0..self.0.len()) {
             let mut line = String::new();
             for i in 0..WIDTH {
                 if self.is_on(i, j) {
@@ -257,16 +240,18 @@ impl Map {
     }
 }
 
-/*#[cfg(test)]
+#[cfg(test)]
 mod tests {
     use super::do_day17_part1;
     use super::do_day17_part2;
+    const INPUT: &'static str = ">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>";
 
     #[test]
     fn part_1() {
-        let input = ">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>";
-
-        assert_eq!(do_day17_part1(input), 3227);
+        assert_eq!(do_day17_part1(INPUT), 3068);
+    }
+    #[test]
+    fn part_2() {
+        assert_eq!(do_day17_part2(INPUT), 1514285714288);
     }
 }
-*/
