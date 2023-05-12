@@ -46,7 +46,7 @@ mod day6;
 mod day7;
 mod day8;
 mod day9;
-const DAY: u32 = 24;
+const DAY: u32 = 23;
 
 fn main() {
     match DAY {

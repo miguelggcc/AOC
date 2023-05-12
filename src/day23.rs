@@ -21,21 +21,25 @@ fn do_day23_part1(input: &str) -> usize {
     let mut elves = parse_input(input);
     let mut dirs = vec![Direction::N, Direction::S, Direction::W, Direction::E];
     let mut positions = HashMap::with_capacity(elves.len());
+    let mut last_elves;
     let mut is_free = Vec::with_capacity(8);
 
     for _ in 0..10 {
-        elves.iter().for_each(|pos| {
-            let new_pos = try_move(pos.0, pos.1, &elves, &dirs, &mut is_free);
-            is_free.clear();
-            if let Some(other_pos) = positions.remove(&new_pos) {
-                positions.insert(*pos, *pos);
-                positions.insert(other_pos, other_pos);
+        last_elves = elves.clone();
+        elves.retain(|pos| {
+            if let Some(new_pos) = try_move(pos.0, pos.1, &last_elves, &dirs, &mut is_free) {
+                if let Some(other_pos) = positions.remove(&new_pos) {
+                    positions.insert(other_pos, other_pos);
+                    true
+                } else {
+                    positions.insert(new_pos, *pos);
+                    false
+                }
             } else {
-                positions.insert(new_pos, *pos);
+                true
             }
         });
 
-        elves.clear();
         elves.extend(positions.drain().map(|(k, _)| k));
         dirs.rotate_left(1);
     }
@@ -53,39 +57,40 @@ fn do_day23_part1(input: &str) -> usize {
     ((1 + max_x - min_x) * (1 + max_y - min_y)) as usize - elves.len()
 }
 
-fn do_day23_part2(input: &str) -> i16 {
+fn do_day23_part2(input: &str) -> usize {
     let mut elves = parse_input(input);
     let mut dirs = vec![Direction::N, Direction::S, Direction::W, Direction::E];
     let mut positions = HashMap::with_capacity(elves.len());
+    let mut last_elves;
     let mut is_free = Vec::with_capacity(8);
-    let mut total = 1;
-    loop {
-        let mut moved_elves = 0;
 
-        elves.iter().for_each(|pos| {
-            let new_pos = try_move(pos.0, pos.1, &elves, &dirs, &mut is_free);
-            is_free.clear();
-            if let Some(other_pos) = positions.remove(&new_pos) {
-                moved_elves -= 1;
-                positions.extend([(*pos, *pos), (other_pos, other_pos)].into_iter());
-            } else {
-                if &new_pos != pos {
+    for i in 1..10000 {
+        let mut moved_elves = 0;
+        last_elves = elves.clone();
+        elves.retain(|pos| {
+            if let Some(new_pos) = try_move(pos.0, pos.1, &last_elves, &dirs, &mut is_free) {
+                if let Some(other_pos) = positions.remove(&new_pos) {
+                    moved_elves -= 1;
+                    positions.insert(other_pos, other_pos);
+                    true
+                } else {
                     moved_elves += 1;
+                    positions.insert(new_pos, *pos);
+                    false
                 }
-                positions.insert(new_pos, *pos);
+            } else {
+                true
             }
         });
 
         if moved_elves == 0 {
-            break;
+            return i;
         }
 
-        elves.clear();
         elves.extend(positions.drain().map(|(k, _)| k));
         dirs.rotate_left(1);
-        total += 1;
     }
-    total
+    panic!("simulation going for too long")
 }
 
 type Point = (i16, i16);
@@ -107,40 +112,41 @@ fn try_move(
     others: &HashSet<Point>,
     dirs: &[Direction],
     is_free: &mut Vec<bool>,
-) -> Point {
+) -> Option<Point> {
+    is_free.clear();
     is_free.extend(
         DELTAS
             .iter()
             .map(|(dx, dy)| !others.contains(&(x + dx, y + dy))),
     );
     if is_free.iter().all(|c| *c) {
-        return (x, y);
+        return None;
     }
     for dir in dirs {
         match dir {
             Direction::N => {
                 if is_free[0] && is_free[1] && is_free[2] {
-                    return (x, y - 1);
+                    return Some((x, y - 1));
                 }
             }
             Direction::S => {
                 if is_free[5] && is_free[6] && is_free[7] {
-                    return (x, y + 1);
+                    return Some((x, y + 1));
                 }
             }
             Direction::W => {
                 if is_free[0] && is_free[3] && is_free[5] {
-                    return (x - 1, y);
+                    return Some((x - 1, y));
                 }
             }
             Direction::E => {
                 if is_free[2] && is_free[4] && is_free[7] {
-                    return (x + 1, y);
+                    return Some((x + 1, y));
                 }
             }
         }
     }
-    (x, y)
+    None
 }
 
 fn parse_input(input: &str) -> HashSet<Point> {
@@ -154,17 +160,6 @@ fn parse_input(input: &str) -> HashSet<Point> {
         })
         .collect()
 }
-
-/*fn display_grid(elves: &[Point], min_x: i16, max_x: i16, min_y: i16, max_y: i16){
-let mut grid = vec![vec!['.'; (1 + max_x - min_x) as usize]; (1 + max_y - min_y) as usize];
-    elves
-        .iter()
-        .for_each(|p| grid[(p.1 - min_y) as usize][(p.0 - min_x) as usize] = '#');
-
-    for j in 0..grid.len() {
-        println!("{}", grid[j].iter().collect::<String>());
-    }
-}*/
 
 #[derive(Debug)]
 enum Direction {
