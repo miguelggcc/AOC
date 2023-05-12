@@ -22,7 +22,7 @@ fn do_day25_part1(input: &str) -> String {
             l.char_indices().map(|(i, c)| {
                 5i64.pow((l.len() - 1 - i) as u32)
                     * match c {
-                        '1' | '0' | '2' => c.to_digit(3).unwrap() as i64,
+                        '0' | '1' | '2' => c.to_digit(3).unwrap() as i64,
                         '-' => -1,
                         '=' => -2,
                         e => panic!("unexpected char {e}"),
