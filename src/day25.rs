@@ -5,13 +5,6 @@ pub fn day25(input_path: &str) {
     let time = Instant::now();
     //Part 1
     println!("SNAFU number: {}", do_day25_part1(&input));
-
-    println!("{:?}", time.elapsed());
-
-    let time = Instant::now();
-    //Part 2
-    //println!("T {}", do_day25_part2(&input));
-
     println!("{:?}", time.elapsed());
 }
 
@@ -42,15 +35,10 @@ fn do_day25_part1(input: &str) -> String {
 
 const CHARS: [char; 5] = ['0', '1', '2', '=', '-'];
 
-fn do_day25_part2(input: &str) -> usize {
-    todo!()
-}
-
 #[cfg(test)]
 mod tests {
 
     use super::do_day25_part1;
-    use super::do_day25_part2;
 
     const INPUT: &'static str = "1=-0-2
 12111
@@ -69,9 +57,5 @@ mod tests {
     #[test]
     fn part_1() {
         assert_eq!(do_day25_part1(INPUT), "2=-1=0");
-    }
-    //#[test]
-    fn part_2() {
-        assert_eq!(do_day25_part2(INPUT), 54);
     }
 }

@@ -63,8 +63,7 @@ fn get_height(input: &str, n_of_rocks: u64) -> u64 {
         }
         height = height.max(rock.y + 1);
 
-        rock.blocks()
-            .for_each(|(x, y)| map.toggle(x, y));
+        rock.blocks().for_each(|(x, y)| map.toggle(x, y));
         r += 1;
 
         if height >= 15 {
