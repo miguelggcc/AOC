@@ -172,7 +172,7 @@ impl State {
             let missed_robots = (u8::from(can_build_obsidian_robot) << 2)
                 + (u8::from(can_build_clay_robot) << 1)
                 + u8::from(can_build_ore_robot);
-            //If this current branch could have created a robot but don't and then
+            //If this current branch could have created a robot but didn't and then
             //one is created in the next state, then it's inefficient and should be purged
 
             v.push(Some((self.clone(), missed_robots)));
