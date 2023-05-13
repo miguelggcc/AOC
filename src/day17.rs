@@ -1,16 +1,18 @@
 use std::{
     collections::{hash_map::Entry, HashMap},
+    iter::once,
     time::Instant,
 };
 
-const WIDTH: usize = 7;
 pub fn day17(input_path: &str) {
     let input = std::fs::read_to_string(input_path).expect("Can't find input file");
     //Part 1
     let time = Instant::now();
+
     println!("Final height: {}", do_day17_part1(&input));
     //Part 2
     println!("Part2: final height: {}", do_day17_part2(&input));
+
     println!("{:?}", time.elapsed());
 }
 
@@ -22,22 +24,25 @@ fn do_day17_part2(input: &str) -> u64 {
     get_height(input, 1000000000000)
 }
 
+const WIDTH: usize = 7;
+
 fn get_height(input: &str, n_of_rocks: u64) -> u64 {
     let mut jets = input
         .chars()
         .map(|c| match c {
-            '<' => Jet::Left,
-            '>' => Jet::Right,
+            '<' => -1,
+            '>' => 1,
             _ => unreachable!(),
         })
         .cycle();
 
     let mut height = 0;
-    let mut map = Map(vec![]);
+    let mut map = Map(Vec::with_capacity(input.len() * 5));
 
     let mut repeated = HashMap::new();
     let mut cycle_height = 0;
     let mut r = 0;
+    let mut i_jet = 0;
 
     while r < (n_of_rocks) {
         //One starting from 0 to when it starts repeating, ignore all the repeated outputs and then the last part that finishes before repeating
@@ -45,7 +50,8 @@ fn get_height(input: &str, n_of_rocks: u64) -> u64 {
         map.add_padding(height, rock.t.height());
 
         loop {
-            let dx = jets.next().unwrap() as isize;
+            let dx = jets.next().unwrap();
+            i_jet += 1;
             if rock.can_move_sideways(dx, &map) {
                 rock.move_sideways(dx);
             }
@@ -58,24 +64,20 @@ fn get_height(input: &str, n_of_rocks: u64) -> u64 {
         height = height.max(rock.y + 1);
 
         rock.blocks()
-            .into_iter()
             .for_each(|(x, y)| map.toggle(x, y));
         r += 1;
 
-        if height > 16 {
-            let key = u128::from_be_bytes(map.0[height - 16..height].try_into().unwrap());
+        if height >= 15 {
+            let key = map.get_bits(height, r % 5, i_jet % input.len());
 
             match repeated.entry(key) {
                 Entry::Occupied(re) => {
                     let (r0, height0) = re.get();
                     let cycle_r = r - r0;
-
-                    if cycle_r > input.len() as u64 {
-                        let n_of_cycles = (n_of_rocks - r) / cycle_r;
-                        cycle_height += (height - height0) as u64 * n_of_cycles;
-                        r += cycle_r * n_of_cycles;
-                        repeated.clear();
-                    }
+                    let n_of_cycles = (n_of_rocks - r) / cycle_r;
+                    cycle_height += (height - height0) as u64 * n_of_cycles;
+                    r += cycle_r * n_of_cycles;
+                    repeated.clear();
                 }
                 Entry::Vacant(va) => {
                     va.insert((r, height));
@@ -84,11 +86,6 @@ fn get_height(input: &str, n_of_rocks: u64) -> u64 {
         }
     }
     height as u64 + cycle_height
-}
-
-enum Jet {
-    Left = -1,
-    Right = 1,
 }
 
 enum RockType {
@@ -119,28 +116,25 @@ impl RockType {
         }
     }
     #[inline(always)]
-    fn blocks(&self, x: usize, y: usize) -> Vec<(usize, usize)> {
+    fn blocks(&self, x: usize, y: usize) -> impl Iterator<Item = (usize, usize)> {
+        let get_blocks = move |(dx, dy): &(isize, isize)| {
+            ((x as isize + dx) as usize, (y as isize + dy) as usize)
+        };
         match self {
-            RockType::Horizontal => vec![(x, y), (x + 1, y), (x + 2, y), (x + 3, y)],
-            RockType::Sum => vec![
-                (x + 1, y),
-                (x, y - 1),
-                (x + 1, y - 1),
-                (x + 2, y - 1),
-                (x + 1, y - 2),
-            ],
-            RockType::L => vec![
-                (x + 2, y),
-                (x + 2, y - 1),
-                (x, y - 2),
-                (x + 1, y - 2),
-                (x + 2, y - 2),
-            ],
-            RockType::Vertical => vec![(x, y), (x, y - 1), (x, y - 2), (x, y - 3)],
-            RockType::Square => vec![(x, y), (x + 1, y), (x, y - 1), (x + 1, y - 1)],
+            RockType::Horizontal => BLOCKS_HORIZONTAL.iter().map(get_blocks),
+            RockType::Sum => BLOCKS_SUM.iter().map(get_blocks),
+            RockType::L => BLOCKS_L.iter().map(get_blocks),
+            RockType::Vertical => BLOCKS_VERTICAL.iter().map(get_blocks),
+            RockType::Square => BLOCKS_SQUARE.iter().map(get_blocks),
         }
     }
 }
+type Point = (isize, isize);
+const BLOCKS_HORIZONTAL: [Point; 4] = [(0, 0), (1, 0), (2, 0), (3, 0)];
+const BLOCKS_SUM: [Point; 5] = [(1, 0), (0, -1), (1, -1), (2, -1), (1, -2)];
+const BLOCKS_L: [Point; 5] = [(2, 0), (2, -1), (0, -2), (1, -2), (2, -2)];
+const BLOCKS_VERTICAL: [Point; 4] = [(0, 0), (0, -1), (0, -2), (0, -3)];
+const BLOCKS_SQUARE: [Point; 4] = [(0, 0), (1, 0), (0, -1), (1, -1)];
 
 struct Rock {
     t: RockType,
@@ -177,7 +171,6 @@ impl Rock {
             !self
                 .t
                 .blocks((self.x as isize + dx) as usize, self.y)
-                .into_iter()
                 .any(|(x, y)| map.is_on(x, y))
         }
     }
@@ -190,14 +183,12 @@ impl Rock {
     }
 
     fn can_move_downwards(&self, map: &Map) -> bool {
-        let (_, wall_check) = self.y.overflowing_sub(self.t.height());
-        if wall_check {
+        if self.y < self.t.height() {
             false
         } else {
             !self
                 .t
                 .blocks(self.x, self.y - 1)
-                .into_iter()
                 .any(|(x, y)| map.is_on(x, y))
         }
     }
@@ -205,7 +196,7 @@ impl Rock {
     fn move_downwards(&mut self) {
         self.y -= 1;
     }
-    fn blocks(&self) -> Vec<(usize, usize)> {
+    fn blocks(&self) -> impl Iterator<Item = (usize, usize)> {
         self.t.blocks(self.x, self.y)
     }
 }
@@ -222,10 +213,20 @@ impl Map {
     fn add_padding(&mut self, height: usize, rock_height: usize) {
         let current_height = self.0.len();
         let needed_height = (height + rock_height + 3).saturating_sub(current_height);
-        self.0.extend(vec![0; needed_height]);
+        self.0.extend(once(0).cycle().take(needed_height));
     }
+    #[inline(always)]
+    fn get_bits(&self, height: usize, rock_type: u64, i_jet: usize) -> u128 {
+        (self.0[height - 15..height]
+            .iter()
+            .enumerate()
+            .fold(0, |acc, (i, row)| acc | ((*row as u128) << (7 * i))))
+            | ((i_jet as u128) << 105)
+            | ((rock_type as u128) << 121)
+    }
+    #[allow(dead_code)]
     fn display(&self) {
-        for j in (0..self.0.len()) {
+        for j in (0..self.0.len()).rev() {
             let mut line = String::new();
             for i in 0..WIDTH {
                 if self.is_on(i, j) {
