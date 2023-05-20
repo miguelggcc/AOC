@@ -1,21 +1,13 @@
-use nom::{
-    branch::alt,
-    bytes::streaming::tag,
-    character::complete,
-    combinator::{all_consuming, map},
-    sequence::preceded,
-    Finish, IResult,
-};
-
-pub fn part1(input: &str) -> i32 {
+pub fn part1(input: &str) -> u32 {
     input
         .lines()
-        .map(|line| all_consuming(parse)(line).finish().unwrap().1)
-        .fold([0, 0], |mut pos, c| {
-            match c {
-                Command::Forward(f) => pos[0] += f,
-                Command::Down(d) => pos[1] += d,
-                Command::Up(u) => pos[1] -= u,
+        .map(|line| line.split_whitespace())
+        .fold([0, 0], |mut pos, mut c| {
+            match (c.next().unwrap(), c.next().unwrap().parse::<u32>().unwrap()) {
+                ("forward", x) => pos[0] += x,
+                ("down", y) => pos[1] += y,
+                ("up", y) => pos[1] -= y,
+                (c, _) => panic!("command {c} doesn't exist"),
             };
             pos
         })
@@ -23,22 +15,25 @@ pub fn part1(input: &str) -> i32 {
         .product()
 }
 
-pub fn part2(_input: &str) -> String {
-    String::from("Not implemented")
-}
-
-fn parse(input: &str) -> IResult<&str, Command> {
-    alt((
-        map(preceded(tag("forward "), complete::i32), Command::Forward),
-        map(preceded(tag("down "), complete::i32), Command::Down),
-        map(preceded(tag("up "), complete::i32), Command::Up),
-    ))(input)
-}
-
-enum Command {
-    Forward(i32),
-    Down(i32),
-    Up(i32),
+pub fn part2(input: &str) -> u32 {
+    input
+        .lines()
+        .map(|line| line.split_whitespace())
+        .fold(([0, 0], 0), |(mut pos, mut aim), mut c| {
+            match (c.next().unwrap(), c.next().unwrap().parse::<u32>().unwrap()) {
+                ("forward", x) => {
+                    pos[0] += x;
+                    pos[1] += aim * x;
+                }
+                ("down", a) => aim += a,
+                ("up", a) => aim -= a,
+                (c, _) => panic!("command {c} doesn't exist"),
+            };
+            (pos, aim)
+        })
+        .0
+        .iter()
+        .product()
 }
 
 #[cfg(test)]
@@ -58,8 +53,7 @@ forward 2";
         assert_eq!(part1(INPUT), 150);
     }
     #[test]
-    #[ignore]
     fn part_2() {
-        assert_eq!(part2(INPUT), "");
+        assert_eq!(part2(INPUT), 900);
     }
 }
