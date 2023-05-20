@@ -9,14 +9,12 @@ pub fn part1(input: &str) -> usize {
 }
 
 pub fn part2(input: &str) -> usize {
-    let data = input
+    input
         .lines()
         .map(|d| d.parse::<u32>().unwrap())
-        .collect::<Vec<_>>();
-
-    data.windows(3)
-        .zip(data.windows(3).skip(1))
-        .filter(|(ds1, ds2)| ds2.iter().sum::<u32>() > ds1.iter().sum::<u32>())
+        .collect::<Vec<_>>()
+        .windows(4)
+        .filter(|ds| ds[3] > ds[0])
         .count()
 }
 
