@@ -3,10 +3,10 @@ use std::{fs, path::Path};
 #[macro_export]
 macro_rules! year {
     ($year:literal) => {
-        paste!{
+        /*paste!{
         #[path = "../"[<aoc $year >]"/mod.rs"]
         mod [<aoc $year >];
-        }
+        }*/
 
         seq!(D in 1..=25 {
         paste! {
@@ -52,30 +52,35 @@ pub fn build_new_year(year: u32) {
         if !path.exists() {
             fs::write(
                 path,
-                "pub fn part1(_input: &str) -> u32 {
-    todo!();
-}
+                format!(
+                    "pub fn part1(_input: &str) -> String {{
+    String::from(\"Not implemented\")
+}}
 
-pub fn part2(_input: &str) -> u32 {
-    todo!();
-}
+pub fn part2(_input: &str) -> String {{
+    String::from(\"Not implemented\")
+}}
 
 #[cfg(test)]
-mod tests {
+mod day{} {{
 
     use super::*;
 
     const INPUT: &'static str = \"\";
 
     #[test]
-    fn part_1() {
-        assert_eq!(part1(INPUT), 0);
-    }
+    #[ignore]
+    fn part_1() {{
+        assert_eq!(part1(INPUT), \"\");
+    }}
     #[test]
-    fn part_2() {
-        assert_eq!(part2(INPUT), 0);
-    }
-}",
+    #[ignore]
+    fn part_2() {{
+        assert_eq!(part2(INPUT), \"\");
+    }}
+}}",
+                    day
+                ),
             )
             .expect("could not create file");
         }
