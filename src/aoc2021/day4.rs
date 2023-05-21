@@ -34,7 +34,7 @@ pub fn part2(input: &str) -> u32 {
     for number in numbers {
         boards.retain_mut(|b| {
             if let Some(index) = b.iter().position(|n| n == &number) {
-                b[index] = -number - 1;
+                b[index] = - 1;
                 let x = index % 5;
                 let y = index / 5;
                 let check_row = b[y * 5..y * 5 + 5].iter().all(|n| n.is_negative());
