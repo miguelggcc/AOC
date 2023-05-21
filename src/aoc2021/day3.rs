@@ -16,7 +16,6 @@ pub fn part1(input: &str) -> u32 {
 
 pub fn part2(input: &str) -> u32 {
     let n_len = input.lines().next().unwrap().len();
-
     let digits: Vec<u32> = input
         .lines()
         .map(|l| {
@@ -36,13 +35,14 @@ pub fn part2(input: &str) -> u32 {
 fn get_rating(digits: &[u32], n_len: usize, switch: u32) -> u32 {
     let mut digits = digits.to_vec();
     for i in (0..n_len).rev() {
-        if digits.len() == 1 {
-            break;
-        }
         let max_bit = (digits.iter().map(|d| d >> i & 1).sum::<u32>()
             / ((1 + digits.len() as u32) / 2))
             ^ switch;
         digits.retain(|d| d >> i & 1 == max_bit);
+
+        if digits.len() == 1 {
+            break;
+        }
     }
     digits[0]
 }
