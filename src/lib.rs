@@ -3,10 +3,6 @@ use std::{fs, path::Path};
 #[macro_export]
 macro_rules! year {
     ($year:literal) => {
-        /*paste!{
-        #[path = "../"[<aoc $year >]"/mod.rs"]
-        mod [<aoc $year >];
-        }*/
 
         seq!(D in 1..=25 {
         paste! {
@@ -26,6 +22,12 @@ macro_rules! year {
             }
         }
         });
+        fn main() {
+            let (day, iterations) = aoc::parse_args_day().unwrap_or_else(|e| panic!("Error {e}"));
+            for _ in 0..iterations {
+                run(day);
+            }
+        }
     }
 }
 
@@ -107,14 +109,12 @@ mod day{} {{
 use paste::paste;
 use seq_macro::seq;
 use std::time::Instant;
+#[path = \"../aoc{}/mod.rs\"]
+mod aoc{};
 
 year!({});
-
-fn main() {{
-    let day = aoc::parse_args_day().unwrap_or_else(|e| panic!(\"Error {{e}}\"));
-    run(day);
-}}",
-                    year
+",
+                    year, year, year
                 ),
             )
             .expect("could not create file")
