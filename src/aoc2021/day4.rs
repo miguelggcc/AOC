@@ -43,13 +43,11 @@ pub fn part2(input: &str) -> u32 {
                     if len == 1 {
                         last = get_score(&b, number);
                     }
-                    false
-                } else {
-                    true
-                }
-            } else {
-                true
+                    return false
+                } 
             }
+                true
+            
         });
         len = boards.len();
     }
