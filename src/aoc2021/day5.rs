@@ -1,7 +1,4 @@
-use std::{
-    collections::{hash_map::Entry, HashMap},
-    iter::once,
-};
+use std::{collections::HashMap, iter::once};
 
 use nom::{
     bytes::complete::tag,
@@ -30,29 +27,18 @@ fn get_overlaps(pairs: impl Iterator<Item = (Point, Point)>) -> usize {
     let mut points = HashMap::new();
     for (p1, p2) in pairs {
         for p in p1.interpolate_points(p2) {
-            match points.entry(p.get_key()) {
-                Entry::Occupied(mut o) => {
-                    *o.get_mut() += 1;
-                }
-                Entry::Vacant(v) => {
-                    v.insert(1);
-                }
-            }
+            *points.entry(p.get_key()).or_insert(0) += 1;
         }
     }
     points.into_values().filter(|&v| v > 1).count()
 }
 
-#[derive(Eq, PartialEq, Hash)]
 struct Point {
     x: i16,
     y: i16,
 }
 
 impl Point {
-    fn new(x: i16, y: i16) -> Self {
-        Self { x, y }
-    }
     fn interpolate_points(&self, other: Point) -> impl Iterator<Item = Point> + '_ {
         let delta_x = other.x - self.x;
         let delta_y = other.y - self.y;
@@ -60,11 +46,13 @@ impl Point {
             .cycle()
             .take(1 + delta_x.abs().max(delta_y.abs()) as usize)
             .enumerate()
-            .map(|(i, (dx, dy))| Point::new(self.x + i as i16 * dx, self.y + i as i16 * dy))
+            .map(|(i, (dx, dy))| Point {
+                x: self.x + i as i16 * dx,
+                y: self.y + i as i16 * dy,
+            })
     }
-
-    fn get_key(&self)->i32{
-        (self.y as i32)|(self.x as i32)<<16
+    fn get_key(&self) -> i32 {
+        (self.y as i32) | (self.x as i32) << 16
     }
 }
 
