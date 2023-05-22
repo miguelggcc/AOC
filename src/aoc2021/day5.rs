@@ -88,7 +88,6 @@ mod day5 {
         assert_eq!(part1(INPUT), 5);
     }
     #[test]
-    #[ignore]
     fn part_2() {
         assert_eq!(part2(INPUT), 12);
     }
