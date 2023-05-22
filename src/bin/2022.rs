@@ -7,6 +7,8 @@ mod aoc2022;
 year!(2022);
 
 fn main() {
-    let day = aoc::parse_args_day().unwrap_or_else(|e| panic!("Error {e}"));
-    run(day);
+    let (day, iterations) = aoc::parse_args_day().unwrap_or_else(|e| panic!("Error {e}"));
+    for _ in 0..iterations {
+        run(day);
+    }
 }

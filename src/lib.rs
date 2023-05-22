@@ -29,17 +29,18 @@ macro_rules! year {
     }
 }
 
-pub fn parse_args_day() -> Result<u32, pico_args::Error> {
+pub fn parse_args_day() -> Result<(u32, usize), pico_args::Error> {
     let mut pargs = pico_args::Arguments::from_env();
 
     let day = pargs.value_from_str("--d")?;
+    let iterations = pargs.value_from_str("--i").unwrap_or(1);
     // It's up to the caller what to do with the remaining arguments.
     let remaining = pargs.finish();
     if !remaining.is_empty() {
         eprintln!("Warning: unused arguments left: {:?}.", remaining);
     }
 
-    Ok(day)
+    Ok((day, iterations))
 }
 
 pub fn build_new_year(year: u32) {

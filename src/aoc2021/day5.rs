@@ -1,4 +1,7 @@
-use std::collections::{hash_map::Entry, HashMap};
+use std::{
+    collections::{hash_map::Entry, HashMap},
+    iter::once,
+};
 
 use nom::{
     bytes::complete::tag,
@@ -11,11 +14,23 @@ use nom::{
 pub fn part1(input: &str) -> usize {
     let pairs = input
         .lines()
+        .map(|line| all_consuming(parse_line)(line).finish().unwrap().1)
+        .filter(|(p1, p2)| p1.x == p2.x || p1.y == p2.y);
+    get_overlaps(pairs)
+}
+
+pub fn part2(input: &str) -> usize {
+    let pairs = input
+        .lines()
         .map(|line| all_consuming(parse_line)(line).finish().unwrap().1);
+    get_overlaps(pairs)
+}
+
+fn get_overlaps(pairs: impl Iterator<Item = (Point, Point)>) -> usize {
     let mut points = HashMap::new();
     for (p1, p2) in pairs {
-        for p in p1.interpolate_points(&p2) {
-            match points.entry(p) {
+        for p in p1.interpolate_points(p2) {
+            match points.entry(p.get_key()) {
                 Entry::Occupied(mut o) => {
                     *o.get_mut() += 1;
                 }
@@ -28,34 +43,28 @@ pub fn part1(input: &str) -> usize {
     points.into_values().filter(|&v| v > 1).count()
 }
 
-pub fn part2(_input: &str) -> String {
-    String::from("Not implemented")
-}
-
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Eq, PartialEq, Hash)]
 struct Point {
-    x: i32,
-    y: i32,
+    x: i16,
+    y: i16,
 }
 
 impl Point {
-    fn new(x: i32, y: i32) -> Self {
+    fn new(x: i16, y: i16) -> Self {
         Self { x, y }
     }
-    fn interpolate_points(&self, other: &Point) -> Vec<Point> {
+    fn interpolate_points(&self, other: Point) -> impl Iterator<Item = Point> + '_ {
         let delta_x = other.x - self.x;
         let delta_y = other.y - self.y;
-        if delta_y == 0 {
-            (0..delta_x.abs() + 1)
-                .map(|dx| Point::new(self.x + delta_x.signum() * dx, self.y))
-                .collect()
-        } else if delta_x == 0 {
-            (0..delta_y.abs() + 1)
-                .map(|dy| Point::new(self.x, self.y + delta_y.signum() * dy))
-                .collect()
-        } else {
-            vec![]
-        }
+        once((delta_x.signum(), delta_y.signum()))
+            .cycle()
+            .take(1 + delta_x.abs().max(delta_y.abs()) as usize)
+            .enumerate()
+            .map(|(i, (dx, dy))| Point::new(self.x + i as i16 * dx, self.y + i as i16 * dy))
+    }
+
+    fn get_key(&self)->i32{
+        (self.y as i32)|(self.x as i32)<<16
     }
 }
 
@@ -65,7 +74,7 @@ fn parse_line(input: &str) -> IResult<&str, (Point, Point)> {
 
 fn parse_point(input: &str) -> IResult<&str, Point> {
     map(
-        separated_pair(complete::i32, complete::char(','), complete::i32),
+        separated_pair(complete::i16, complete::char(','), complete::i16),
         |(x, y)| Point { x, y },
     )(input)
 }
@@ -93,6 +102,6 @@ mod day5 {
     #[test]
     #[ignore]
     fn part_2() {
-        assert_eq!(part2(INPUT), "");
+        assert_eq!(part2(INPUT), 12);
     }
 }
