@@ -21,8 +21,7 @@ pub fn part2(input: &str) -> u32 {
     let data = input.lines().map(|line| parse(line).finish().unwrap().1);
     let mut seg = [0; 10];
     data.map(|(signals, outputs)| {
-        let digits: HashSet<_> = HashSet::from_iter(signals.iter().chain(&outputs));
-        let (len6, digits): (Vec<_>, Vec<_>) = digits.into_iter().partition(|n| n.len() == 6);
+        let (len6, digits): (Vec<_>, Vec<_>) = signals.iter().chain(&outputs).partition(|n| n.len() == 6);
         let mut common_len6 = common_list(len6.into_iter().map(to_num).collect::<Vec<_>>());
         seg[1] = to_num(digits.iter().find(|n| n.len() == 2).expect("no '1' found"));
         seg[7] = to_num(digits.iter().find(|n| n.len() == 3).expect("no '7' found"));
