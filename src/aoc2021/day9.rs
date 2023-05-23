@@ -14,10 +14,8 @@ pub fn part1(input: &str) -> u32 {
     map.iter()
         .enumerate()
         .filter(|(index, h)| {
-            let x = *index as i32 % nx;
-            let y = *index as i32 / nx;
-            deltas(x,y,nx,ny)
-                .all(|(dx, dy)| map[(x + dx + (y + dy) * nx) as usize] > **h)
+            deltas(*index, nx, ny)
+                .all(|(dx, dy)| map[(*index as i32 + dx + dy * nx) as usize] > **h)
         })
         .map(|(_, h)| h + 1)
         .sum()
@@ -34,9 +32,8 @@ pub fn part2(input: &str) -> u32 {
     map.iter()
         .enumerate()
         .map(|(index0, h)| {
-            let x = index0 as i32 % nx;
-            let y = index0 as i32 / nx;
-            if !deltas(x, y, nx, ny).all(|(dx, dy)| map[(x + dx + (y + dy) * nx) as usize] > *h)
+            if !deltas(index0, nx, ny)
+                .all(|(dx, dy)| map[(index0 as i32 + dx + dy * nx) as usize] > *h)
             {
                 return 0;
             }
@@ -46,8 +43,8 @@ pub fn part2(input: &str) -> u32 {
             while let Some(index) = q.pop_front() {
                 let x = index as i32 % nx;
                 let y = index as i32 / nx;
-                for nindex in deltas(x, y, nx, ny)
-                    .map(|(dx, dy)| (x + dx + (y + dy) * nx) as usize)
+                for nindex in
+                    deltas(index, nx, ny).map(|(dx, dy)| (x + dx + (y + dy) * nx) as usize)
                 {
                     if !visited.contains(&nindex)
                         && map[nindex].saturating_sub(map[index]) >= 1
@@ -77,10 +74,12 @@ pub fn part2(input: &str) -> u32 {
 }
 const DELTAS: [(i32, i32); 4] = [(-1, 0), (1, 0), (0, -1), (0, 1)];
 
-fn deltas(x:i32,y:i32,nx:i32,ny:i32)->impl Iterator<Item = (i32,i32)>{
+fn deltas(index: usize, nx: i32, ny: i32) -> impl Iterator<Item = (i32, i32)> {
+    let x = index as i32 % nx;
+    let y = index as i32 / nx;
     DELTAS
-                .into_iter()
-                .filter(move |(dx, dy)| x + dx >= 0 && y + dy >= 0 && x + dx < nx && y + dy < ny)
+        .into_iter()
+        .filter(move |(dx, dy)| x + dx >= 0 && y + dy >= 0 && x + dx < nx && y + dy < ny)
 }
 
 #[cfg(test)]
