@@ -41,7 +41,7 @@ pub fn part2(input: &str) -> u32 {
                 let check_column = b.iter().skip(x).step_by(5).all(|n| n.is_negative());
                 if check_row || check_column {
                     if len == 1 {
-                        last = get_score(&b, number);
+                        last = get_score(b, number);
                     }
                     return false;
                 }
@@ -54,7 +54,7 @@ pub fn part2(input: &str) -> u32 {
 }
 
 fn get_score(b: &[i8], number: i8) -> u32 {
-    b.into_iter()
+    b.iter()
         .filter(|n| n.is_positive())
         .map(|n| *n as u32)
         .sum::<u32>()
