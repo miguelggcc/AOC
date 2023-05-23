@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use nom::{
     character::complete,
     multi::separated_list1,
