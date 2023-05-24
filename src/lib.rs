@@ -10,12 +10,14 @@ macro_rules! year {
                 match (d) {
                     #(D => {let input = std::fs::read_to_string(concat!["inputs/aoc", stringify![$year], "/input_day", stringify![D], ".txt"])
                                     .expect("can't read input file");
+                                    println!("Day {}",D);
                                     let time = Instant::now();
-                                    println!("{}",[<aoc $year >]::[<day D>]::part1(&input));
-                                    println!("{:?}", time.elapsed());
+                                    let p1 = [<aoc $year >]::[<day D>]::part1(&input);
+                                    println!("{}\n in {:?}",p1, time.elapsed());
                                     let time = Instant::now();
-                                    println!("{}",[<aoc $year >]::[<day D>]::part2(&input));
-                                    println!("{:?}", time.elapsed());})*
+                                    let p2 = [<aoc $year >]::[<day D>]::part2(&input);
+                                    println!("{}\n in {:?}",p2, time.elapsed());
+                            })*
 
                     day => panic!("there is no day {day}"),
                 }
