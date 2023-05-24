@@ -63,7 +63,10 @@ fn common(a: u32, b: u32) -> u32 {
 }
 
 fn common_list(list: Vec<u32>) -> u32 {
-    PRIMES.into_iter().filter(|x| list.iter().all(|a| a % x == 0)).product()
+    PRIMES
+        .into_iter()
+        .filter(|x| list.iter().all(|a| a % x == 0))
+        .product()
 }
 
 fn parse(input: &str) -> IResult<&str, (Vec<&str>, Vec<&str>)> {
