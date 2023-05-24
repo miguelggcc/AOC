@@ -10,7 +10,7 @@ pub fn part1(input: &str) -> usize {
     data.map(|(_, outputs)| {
         outputs
             .iter()
-            .filter(|o| o.len() <= 4 || o.len() == 7)
+            .filter(|s| s.len() <= 4 || s.len() == 7)
             .count()
     })
     .sum()
@@ -63,13 +63,7 @@ fn common(a: u32, b: u32) -> u32 {
 }
 
 fn common_list(list: Vec<u32>) -> u32 {
-    PRIMES.into_iter().fold(1, |acc, x| {
-        acc * if list.iter().all(|a| a % x == 0) {
-            x
-        } else {
-            1
-        }
-    })
+    PRIMES.into_iter().filter(|x| list.iter().all(|a| a % x == 0)).product()
 }
 
 fn parse(input: &str) -> IResult<&str, (Vec<&str>, Vec<&str>)> {
