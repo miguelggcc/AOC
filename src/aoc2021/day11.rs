@@ -1,11 +1,7 @@
 pub fn part1(input: &str) -> u32 {
     let (mut octopuses, nx, ny) = parse(input);
-    let mut flashes = 0;
 
-    for _ in 0..100 {
-        flashes += step(&mut octopuses, nx, ny);
-    }
-    flashes
+    (0..100).map(|_| step(&mut octopuses, nx, ny)).sum()
 }
 
 pub fn part2(input: &str) -> u32 {
