@@ -30,13 +30,14 @@ pub fn part2(input: &str) -> u32 {
     lows.into_iter()
         .map(|index0| {
             let mut basin = 1;
-            let mut q = VecDeque::from([(map[index0], index0)]);
-            while let Some((h, index)) = q.pop_front() {
+            let mut q = VecDeque::from([index0]);
+            map[index0] = 9;
+            while let Some(index) = q.pop_front() {
                 for nindex in neighbours(index, nx, ny) {
-                    if map[nindex] != 9 && map[nindex] >= h {
+                    if map[nindex] != 9 {
                         basin += 1;
-                        q.push_back((map[nindex], nindex));
                         map[nindex] = 9;
+                        q.push_back(nindex);
                     }
                 }
             }
