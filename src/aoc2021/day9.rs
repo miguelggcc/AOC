@@ -57,6 +57,7 @@ pub fn part2(input: &str) -> u32 {
         .iter()
         .product()
 }
+
 const DELTAS: [(i32, i32); 4] = [(-1, 0), (1, 0), (0, -1), (0, 1)];
 
 fn neighbours(index: usize, nx: i32, ny: i32) -> impl Iterator<Item = usize> {
