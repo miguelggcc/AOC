@@ -1,12 +1,10 @@
 pub fn part1(input: &str) -> u32 {
     let (mut octopuses, nx, ny) = parse(input);
-
     (0..100).map(|_| step(&mut octopuses, nx, ny)).sum()
 }
 
 pub fn part2(input: &str) -> u32 {
     let (mut octopuses, nx, ny) = parse(input);
-
     for s in 1..10000 {
         if step(&mut octopuses, nx, ny) == octopuses.len() as u32 {
             return s;
