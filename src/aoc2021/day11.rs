@@ -42,16 +42,6 @@ fn step(octopuses: &mut Vec<u32>, nx: isize, ny: isize) -> u32 {
     flashes
 }
 
-fn parse(input: &str) -> (Vec<u32>, isize, isize) {
-    let nx = input.lines().next().unwrap().len() as isize;
-    let octopuses: Vec<_> = input
-        .lines()
-        .flat_map(|line| line.chars().map(|c| c.to_digit(10).unwrap()))
-        .collect();
-    let ny = octopuses.len() as isize / nx;
-    (octopuses, nx, ny)
-}
-
 const DELTAS: [(isize, isize); 8] = [
     (-1, -1),
     (0, -1),
@@ -70,6 +60,16 @@ fn neighbours(index: isize, nx: isize, ny: isize) -> impl Iterator<Item = usize>
         .into_iter()
         .filter(move |(dx, dy)| x + dx >= 0 && y + dy >= 0 && x + dx < nx && y + dy < ny)
         .map(move |(dx, dy)| (index + dx + dy * nx) as usize)
+}
+
+fn parse(input: &str) -> (Vec<u32>, isize, isize) {
+    let nx = input.lines().next().unwrap().len() as isize;
+    let octopuses: Vec<_> = input
+        .lines()
+        .flat_map(|line| line.chars().map(|c| c.to_digit(10).unwrap()))
+        .collect();
+    let ny = octopuses.len() as isize / nx;
+    (octopuses, nx, ny)
 }
 
 #[cfg(test)]
