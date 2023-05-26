@@ -1,4 +1,4 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::{hash_map::Entry, HashMap, VecDeque};
 
 pub fn part1(input: &str) -> u32 {
     let (caves, start, end) = parse(input);
@@ -19,15 +19,11 @@ fn get_paths(caves: Vec<Cave>, start: usize, end: usize, once: bool) -> u32 {
             paths += 1;
             continue;
         }
-        for nindex in caves[index]
-            .children
-            .iter()
-            .filter(|nindex| nindex != &&start)
-        {
+        for nindex in caves[index].children.iter() {
             if caves[*nindex].small {
-                if visited & (1u64 << *nindex) == 0 {
-                    q.push_back((*nindex, visited ^ 1u64 << nindex, has_repeated));
-                } else if !has_repeated && nindex != &end {
+                if visited & (1u32 << *nindex) == 0 {
+                    q.push_back((*nindex, visited ^ 1u32 << nindex, has_repeated));
+                } else if !has_repeated && nindex != &start {
                     q.push_back((*nindex, visited, true));
                 }
                 continue;
@@ -39,51 +35,51 @@ fn get_paths(caves: Vec<Cave>, start: usize, end: usize, once: bool) -> u32 {
 }
 
 fn parse(input: &str) -> (Vec<Cave>, usize, usize) {
-    let mut ids = HashMap::new();
-    let mut children = HashMap::new();
+    let mut cave_map: HashMap<String, (usize, Vec<_>)> = HashMap::new();
     let mut index = 0;
     input
         .lines()
         .map(|l| l.split('-').collect::<Vec<_>>())
         .for_each(|pair| {
-            pair.iter().for_each(|&c| {
-                if !ids.contains_key(c) {
-                    ids.insert(c.to_string(), index);
+            let index_left = match cave_map.entry(pair[0].to_string()) {
+                Entry::Occupied(o) => (*o.get()).0,
+                Entry::Vacant(v) => {
+                    v.insert((index, vec![]));
                     index += 1;
+                    index - 1
                 }
-            });
-            let ids0 = *ids.get(pair[0]).unwrap();
-            let ids1 = *ids.get(pair[1]).unwrap();
-            children
-                .entry(pair[0].to_string())
-                .or_insert(vec![])
-                .push(ids1);
-            children
-                .entry(pair[1].to_string())
-                .or_insert(vec![])
-                .push(ids0);
+            };
+            let index_right = match cave_map.entry(pair[1].to_string()) {
+                Entry::Occupied(mut o) => {
+                    (*o.get_mut()).1.push(index_left);
+                    (*o.get()).0
+                }
+                Entry::Vacant(v) => {
+                    v.insert((index, vec![index_left]));
+                    index += 1;
+                    index - 1
+                }
+            };
+            (*cave_map.get_mut(pair[0]).unwrap()).1.push(index_right);
         });
-    let mut caves: Vec<_> = children
-        .drain()
-        .map(|(id, children)| {
-            let small = id.chars().next().unwrap().is_lowercase();
-            Cave {
-                id,
-                small,
-                children,
-            }
-        })
-        .collect();
-    caves.sort_by_key(|c| ids.get(&c.id).unwrap());
+    let mut caves = vec![Cave::default(); cave_map.len()];
+    cave_map.drain().for_each(|(id, (index, children))| {
+        let small = id.chars().next().unwrap().is_lowercase();
+        caves[index] = Cave {
+            id,
+            small,
+            children,
+        }
+    });
     let start = caves
         .iter()
         .position(|c| c.id == "start")
         .expect("no 'start'");
-    let end = caves.iter().position(|c| c.id == "end").expect("no ' end'");
+    let end = caves.iter().position(|c| c.id == "end").expect("no 'end'");
     (caves, start, end)
 }
 
-#[derive(Debug)]
+#[derive(Default, Clone)]
 struct Cave {
     id: String,
     small: bool,
