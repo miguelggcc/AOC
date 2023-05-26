@@ -13,7 +13,7 @@ pub fn part2(input: &str) -> u32 {
     panic!("synchronization not found")
 }
 
-fn step(octopuses: &mut Vec<u32>, nx: isize, ny: isize) -> u32 {
+fn step(octopuses: &mut [u32], nx: isize, ny: isize) -> u32 {
     let mut stack = Vec::from_iter(octopuses.iter_mut().enumerate().flat_map(
         |(index, octopus)| {
             *octopus += 1;

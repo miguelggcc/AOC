@@ -42,7 +42,7 @@ fn parse(input: &str) -> (Vec<Cave>, usize, usize) {
         .map(|l| l.split('-').collect::<Vec<_>>())
         .for_each(|pair| {
             let index_left = match cave_map.entry(pair[0].to_string()) {
-                Entry::Occupied(o) => (*o.get()).0,
+                Entry::Occupied(o) => o.get().0,
                 Entry::Vacant(v) => {
                     v.insert((index, vec![]));
                     index += 1;
@@ -51,8 +51,8 @@ fn parse(input: &str) -> (Vec<Cave>, usize, usize) {
             };
             let index_right = match cave_map.entry(pair[1].to_string()) {
                 Entry::Occupied(mut o) => {
-                    (*o.get_mut()).1.push(index_left);
-                    (*o.get()).0
+                    o.get_mut().1.push(index_left);
+                    o.get().0
                 }
                 Entry::Vacant(v) => {
                     v.insert((index, vec![index_left]));
@@ -60,7 +60,7 @@ fn parse(input: &str) -> (Vec<Cave>, usize, usize) {
                     index - 1
                 }
             };
-            (*cave_map.get_mut(pair[0]).unwrap()).1.push(index_right);
+            cave_map.get_mut(pair[0]).unwrap().1.push(index_right);
         });
     let mut caves = vec![Cave::default(); cave_map.len()];
     cave_map.drain().for_each(|(id, (index, children))| {
