@@ -4,51 +4,52 @@ use nom::{
 use std::str::Lines;
 
 pub fn part1(input: &str) -> usize {
-    let (points, mut folds) = parse(input);
-    fold(points, folds.next().unwrap()).len()
+    let (mut points, mut folds) = parse(input);
+    fold(&mut points, folds.next().unwrap());
+    points.len()
 }
 
 pub fn part2(input: &str) -> String {
     let (mut points, folds) = parse(input);
 
     for f in folds {
-        points = fold(points, f);
+        fold(&mut points, f);
     }
     let (xmax, ymax) = points
         .iter()
         .fold((0, 0), |(xmax, ymax), &(x, y)| (x.max(xmax), y.max(ymax)));
 
-    let mut out = String::with_capacity(((xmax + 1) * ymax) as usize);
-    for y in 0..=ymax {
-        for x in 0..=xmax {
-            out.push(if points.contains(&(x, y)) { '#' } else { '.' });
-        }
-        out.push('\n');
-    }
-    out
+    let mut row = vec!['.'; (xmax + 2) as usize];
+    *row.last_mut().unwrap() = '\n';
+    let mut out = row.repeat(ymax as usize + 1);
+    points
+        .into_iter()
+        .for_each(|p| out[(p.0 + (xmax + 2) * p.1) as usize] = '#');
+    out.into_iter().collect()
 }
 
-fn fold(points: Vec<(u16, u16)>, f: &str) -> Vec<(u16, u16)> {
+fn fold(points: &mut Vec<(u16, u16)>, f: &str) {
     let mut split = f.split('=');
-    let mut v = match (
+    match (
         split.next().unwrap().chars().last().unwrap(),
         split.next().unwrap().parse::<u16>().unwrap(),
     ) {
         ('x', x) => {
-            let (mut left, right): (Vec<_>, _) = points.into_iter().partition(|p| p.0 < x);
-            left.extend(right.into_iter().map(|p| (2 * x - p.0, p.1)));
-            left
+            points
+                .iter_mut()
+                .filter(|p| p.0 > x)
+                .for_each(|p| p.0 = 2 * x - p.0);
         }
         ('y', y) => {
-            let (mut up, down): (Vec<_>, _) = points.into_iter().partition(|p| p.1 < y);
-            up.extend(down.into_iter().map(|p| (p.0, 2 * y - p.1)));
-            up
+            points
+                .iter_mut()
+                .filter(|p| p.1 > y)
+                .for_each(|p| p.1 = 2 * y - p.1);
         }
         (e, _) => panic!("Unknown character {e}"),
-    };
-    v.sort_unstable();
-    v.dedup();
-    v
+    }
+    points.sort_unstable();
+    points.dedup();
 }
 
 fn parse(input: &str) -> (Vec<(u16, u16)>, Lines) {
