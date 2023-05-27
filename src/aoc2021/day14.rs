@@ -12,6 +12,18 @@ fn do_steps(input: &str, n_of_steps: usize) -> u64 {
     let mut lines = input.lines();
     let template = lines.next().unwrap().as_bytes();
     assert!(lines.next().unwrap().is_empty());
+    let steps: Vec<_> = lines
+        .map(|l| {
+            let (pair, middle) = l.split_once(" -> ").unwrap();
+            let (left, right) = pair.split_at(1);
+            (
+                pair,
+                middle,
+                [[left, middle].join(""), [middle, right].join("")],
+            )
+        })
+        .collect();
+
     let mut pairs = HashMap::with_capacity(26 * 26);
     let mut letters = vec![0; (1 + b'Z' - b'A') as usize];
 
@@ -19,7 +31,6 @@ fn do_steps(input: &str, n_of_steps: usize) -> u64 {
         .iter()
         .for_each(|c| letters[(c - b'A') as usize] += 1);
 
-    let steps = lines.map(|l| l.split_once(" -> ").unwrap());
     template.windows(2).for_each(|bytes| {
         pairs.insert(String::from_utf8(bytes.to_vec()).unwrap(), 1);
     });
@@ -27,26 +38,22 @@ fn do_steps(input: &str, n_of_steps: usize) -> u64 {
     for _ in 0..n_of_steps {
         pairs.retain(|_, c| *c > 0);
         old_pairs = pairs.clone();
-        for (old_pair, middle) in steps.clone() {
+        for (old_pair, middle, new_pairs) in steps.clone().into_iter() {
             if let Some(count) = old_pairs.get(old_pair) {
-                let (left, right) = old_pair.split_at(1);
                 *pairs.get_mut(old_pair).unwrap() -= count;
                 letters[(middle.as_bytes()[0] - b'A') as usize] += count;
 
-                [left, middle, right].windows(2).for_each(|k| {
-                    pairs
-                        .entry(k.join(""))
-                        .and_modify(|c| *c += count)
-                        .or_insert(*count);
+                new_pairs.into_iter().for_each(|k| {
+                    pairs.entry(k).and_modify(|c| *c += count).or_insert(*count);
                 });
             }
         }
     }
-    let minmax = letters
+    let (min, max) = letters
         .into_iter()
         .filter(|&c| c > 0)
-        .fold([u64::MAX, 0], |acc, c| [acc[0].min(c), acc[1].max(c)]);
-    minmax[1] - minmax[0]
+        .fold((u64::MAX, 0), |(min, max), c| (min.min(c), max.max(c)));
+    max - min
 }
 
 #[cfg(test)]
