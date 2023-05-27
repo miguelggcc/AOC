@@ -1,9 +1,54 @@
-pub fn part1(_input: &str) -> String {
-    String::from("Not implemented")
+use std::collections::HashMap;
+
+pub fn part1(input: &str) -> u64 {
+    do_steps(input, 10)
 }
 
-pub fn part2(_input: &str) -> String {
-    String::from("Not implemented")
+pub fn part2(input: &str) -> u64 {
+    do_steps(input, 40)
+}
+
+fn do_steps(input: &str, n_of_steps: usize) -> u64 {
+    let mut lines = input.lines();
+    let template = lines.next().unwrap().as_bytes();
+    assert!(lines.next().unwrap().is_empty());
+    let mut pairs = HashMap::with_capacity(26 * 26);
+    let mut letters = vec![0; (1 + b'Z' - b'A') as usize];
+
+    template
+        .iter()
+        .for_each(|c| letters[(c - b'A') as usize] += 1);
+
+    let steps = lines.map(|l| {
+       l.split_once(" -> ").unwrap()
+    });
+    template.windows(2).for_each(|bytes| {
+        pairs.insert(String::from_utf8(bytes.to_vec()).unwrap(), 1);
+    });
+    let mut old_pairs;
+    for _ in 0..n_of_steps {
+        pairs.retain(|_, c| *c > 0);
+        old_pairs = pairs.clone();
+        for (old_pair, middle) in steps.clone() {
+            if let Some(count) = old_pairs.get(old_pair) {
+                let (left, right) = old_pair.split_at(1);
+                *pairs.get_mut(old_pair).unwrap() -= count;
+                letters[(middle.as_bytes()[0] - b'A') as usize] += count;
+
+                [left, middle, right].windows(2).for_each(|k| {
+                    pairs
+                        .entry(k.join(""))
+                        .and_modify(|c| *c += count)
+                        .or_insert(*count);
+                });
+            }
+        }
+    }
+    let minmax = letters
+        .into_iter()
+        .filter(|&c| c > 0)
+        .fold([u64::MAX, 0], |acc, c| [acc[0].min(c), acc[1].max(c)]);
+    minmax[1] - minmax[0]
 }
 
 #[cfg(test)]
@@ -11,16 +56,31 @@ mod day14 {
 
     use super::*;
 
-    const INPUT: &'static str = "";
+    const INPUT: &'static str = "NNCB
+
+CH -> B
+HH -> N
+CB -> H
+NH -> C
+HB -> C
+HC -> B
+HN -> C
+NN -> C
+BH -> H
+NC -> B
+NB -> B
+BN -> B
+BB -> N
+BC -> B
+CC -> N
+CN -> C";
 
     #[test]
-    #[ignore]
     fn part_1() {
-        assert_eq!(part1(INPUT), "");
+        assert_eq!(part1(INPUT), 1588);
     }
     #[test]
-    #[ignore]
     fn part_2() {
-        assert_eq!(part2(INPUT), "");
+        assert_eq!(part2(INPUT), 2188189693529);
     }
 }
