@@ -16,11 +16,8 @@ fn do_steps(input: &str, n_of_steps: usize) -> u64 {
         .map(|l| {
             let (pair, middle) = l.split_once(" -> ").unwrap();
             let (left, right) = pair.split_at(1);
-            (
-                pair,
-                middle,
-                [[left, middle].join(""), [middle, right].join("")],
-            )
+            let new_pairs = [[left, middle].join(""), [middle, right].join("")];
+            (pair, middle, new_pairs)
         })
         .collect();
 
@@ -32,19 +29,20 @@ fn do_steps(input: &str, n_of_steps: usize) -> u64 {
         .for_each(|c| letters[(c - b'A') as usize] += 1);
 
     template.windows(2).for_each(|bytes| {
-        pairs.insert(String::from_utf8(bytes.to_vec()).unwrap(), 1);
+        *pairs
+            .entry(String::from_utf8(bytes.to_vec()).unwrap())
+            .or_insert(0) += 1;
     });
     let mut old_pairs;
     for _ in 0..n_of_steps {
         pairs.retain(|_, c| *c > 0);
         old_pairs = pairs.clone();
-        for (old_pair, middle, new_pairs) in steps.clone().into_iter() {
-            if let Some(count) = old_pairs.get(old_pair) {
-                *pairs.get_mut(old_pair).unwrap() -= count;
+        for (old_pair, middle, new_pairs) in steps.iter() {
+            if let Some(count) = old_pairs.get(*old_pair) {
+                *pairs.get_mut(*old_pair).unwrap() -= count;
                 letters[(middle.as_bytes()[0] - b'A') as usize] += count;
-
-                new_pairs.into_iter().for_each(|k| {
-                    pairs.entry(k).and_modify(|c| *c += count).or_insert(*count);
+                new_pairs.iter().for_each(|k| {
+                    *pairs.entry(k.clone()).or_insert(0) += *count;
                 });
             }
         }
