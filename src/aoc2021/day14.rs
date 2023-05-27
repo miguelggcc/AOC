@@ -19,9 +19,7 @@ fn do_steps(input: &str, n_of_steps: usize) -> u64 {
         .iter()
         .for_each(|c| letters[(c - b'A') as usize] += 1);
 
-    let steps = lines.map(|l| {
-       l.split_once(" -> ").unwrap()
-    });
+    let steps = lines.map(|l| l.split_once(" -> ").unwrap());
     template.windows(2).for_each(|bytes| {
         pairs.insert(String::from_utf8(bytes.to_vec()).unwrap(), 1);
     });

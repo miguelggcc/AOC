@@ -29,10 +29,10 @@ pub fn part2(input: &str) -> String {
 }
 
 fn fold(points: &mut Vec<(u16, u16)>, f: &str) {
-    let mut split = f.split('=');
+    let split = f.split_once('=').unwrap();
     match (
-        split.next().unwrap().chars().last().unwrap(),
-        split.next().unwrap().parse::<u16>().unwrap(),
+        split.0.chars().last().unwrap(),
+        split.1.parse::<u16>().unwrap(),
     ) {
         ('x', x) => {
             points
