@@ -29,11 +29,11 @@ fn find_best_path(map: Vec<u32>, nx: usize, ny: usize) -> u32 {
         dist: 0,
     };
     let end = (nx * ny) - 1;
-    let mut q = BinaryHeap::from([walker_root]);
+    let mut heap = BinaryHeap::from([walker_root]);
 
     let mut visited = vec![u32::MAX; nx * ny];
 
-    while let Some(p_walker) = q.pop() {
+    while let Some(p_walker) = heap.pop() {
         if p_walker.index == end {
             return p_walker.risk;
         }
@@ -47,7 +47,7 @@ fn find_best_path(map: Vec<u32>, nx: usize, ny: usize) -> u32 {
                         risk,
                         dist: nindex % nx + nindex / nx,
                     };
-                    q.push(walker);
+                    heap.push(walker);
                 }
             }
         }
