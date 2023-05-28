@@ -84,7 +84,7 @@ fn neighbours(index: usize, nx: isize, ny: isize) -> impl Iterator<Item = usize>
     DELTAS
         .iter()
         .filter(move |(dx, dy)| x + dx >= 0 && y + dy >= 0 && x + dx < nx && y + dy < ny)
-        .map(move |(dx, dy)| (x + dx + (y+dy) * nx) as usize)
+        .map(move |(dx, dy)| (x + dx + (y + dy) * nx) as usize)
 }
 
 fn parse(input: &str) -> (Vec<Vec<u32>>, usize, usize) {
