@@ -11,16 +11,16 @@ pub fn part2(input: &str) -> u64 {
 fn parse_packet(n: &mut impl Iterator<Item = u8>) -> Packet {
     let mut ver = to_num(n.take(3));
     let id = to_num(n.take(3));
-    let mut bits = 6;
+    let mut bits = 0;
 
     if id == 4 {
+        bits += 11;
         let mut value = 0;
-        while n.next().unwrap()==1{
-            value = value<<4|to_num(n.take(4)) as u64;
+        while n.next().unwrap() == 1 {
+            value = value << 4 | to_num(n.take(4)) as u64;
             bits += 5;
         }
-        value = value<<4|to_num(n.take(4)) as u64;
-        bits += 5;
+        value = value << 4 | to_num(n.take(4)) as u64;
         return Packet { ver, value, bits };
     }
     let length_id = n.next().unwrap();
@@ -28,16 +28,16 @@ fn parse_packet(n: &mut impl Iterator<Item = u8>) -> Packet {
     let children = match length_id {
         0 => {
             let mut children = vec![];
-            while bits - 6 < length {
+            while bits < length {
                 let new_packet = parse_packet(n);
                 bits += new_packet.bits;
                 children.push(new_packet);
             }
-            bits += 16;
+            bits += 22;
             children
         }
         _ => {
-            bits += 12;
+            bits += 18;
             (0..length)
                 .map(|_| {
                     let new_packet = parse_packet(n);
