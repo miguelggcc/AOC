@@ -66,7 +66,6 @@ fn to_num(bits: impl Iterator<Item = u8>) -> u32 {
     bits.fold(0, |acc, b| (b as u32) | acc << 1)
 }
 
-#[derive(Debug)]
 struct Packet {
     ver: u32,
     value: u64,
