@@ -1,6 +1,6 @@
 use nom::{
     branch::alt,
-    character::complete,
+    character::complete::{self, char},
     combinator::map,
     sequence::{delimited, separated_pair},
     Finish, IResult,
@@ -10,33 +10,46 @@ pub fn part1(input: &str) -> u32 {
     let mut lines = input.lines();
     let mut root_pair = parse_pair(lines.next().unwrap()).finish().unwrap().1;
     while let Some(line) = lines.next() {
-        root_pair = El::Pair(Box::new(Pair {
-            l: root_pair,
-            r: parse_pair(line).finish().unwrap().1,
-        }));
-
-        loop {
-            while root_pair.explode(0).0 {}
-            if !root_pair.split(0) {
-                break;
-            }
-        }
+        root_pair = Elem::new(root_pair, parse_pair(line).finish().unwrap().1);
+        root_pair.reduce();
     }
-    println!("{:?}", root_pair);
-    0
+    root_pair.magnitude()
 }
 
-pub fn part2(_input: &str) -> String {
-    String::from("Not implemented")
+pub fn part2(input: &str) -> u32 {
+    let numbers: Vec<_> = input
+        .lines()
+        .map(|l| parse_pair(l).finish().unwrap().1)
+        .collect();
+    numbers
+        .iter()
+        .enumerate()
+        .flat_map(|(i, n1)| {
+            numbers.iter().enumerate().filter_map(move |(j, n2)| {
+                (i != j).then(|| {
+                    let mut pair = Elem::new(n1.clone(), n2.clone());
+                    pair.reduce();
+                    pair.magnitude()
+                })
+            })
+        })
+        .max()
+        .unwrap()
 }
 
-#[derive(Debug)]
-enum El {
+#[derive(Clone, Debug)]
+enum Elem {
     Pair(Box<Pair>),
     Value(u8),
 }
 
-impl El {
+impl Elem {
+    fn new(l: Self, r: Self) -> Self {
+        Self::Pair(Box::new(Pair { l, r }))
+    }
+    fn reduce(&mut self) {
+        while self.explode(0).0 || self.split() {}
+    }
     fn explode(&mut self, depth: u8) -> (bool, u8, u8) {
         let (exploded, vl, vr, explode) = match self {
             Self::Pair(p) => match (&mut p.l, &mut p.r) {
@@ -61,7 +74,6 @@ impl El {
                     *vl += vl2;
                     (exploded, 0, vr, false)
                 }
-
                 (Self::Value(vl), Self::Value(vr)) => {
                     if depth >= 4 {
                         (true, *vl, *vr, true)
@@ -70,120 +82,91 @@ impl El {
                     }
                 }
             },
-            Self::Value(_) => todo!(),
+            _ => unreachable!(),
         };
         if explode {
-            *self = El::Value(0);
+            *self = Self::Value(0);
         }
         (exploded, vl, vr)
     }
 
     fn add_left(&mut self, value: u8) {
         match self {
-            El::Pair(p) => p.l.add_left(value),
-            El::Value(v) => *v += value,
+            Self::Pair(p) => p.l.add_left(value),
+            Self::Value(v) => *v += value,
         }
     }
     fn add_right(&mut self, value: u8) {
         match self {
-            El::Pair(p) => p.r.add_right(value),
-            El::Value(v) => *v += value,
+            Self::Pair(p) => p.r.add_right(value),
+            Self::Value(v) => *v += value,
         }
     }
-    fn split(&mut self, depth: u8) -> bool {
-        match self {
-            Self::Pair(p) => match (&mut p.l, &mut p.r) {
+    fn split(&mut self) -> bool {
+        if let Self::Pair(p) = self {
+            match (&mut p.l, &mut p.r) {
                 (Self::Pair(_), Self::Pair(_)) => {
-                    let explode1 = p.l.split(depth + 1);
-
-                    if !explode1 {
-                        let explode2 = p.r.split(depth + 1);
-                        explode1 || explode2
-                    } else {
-                        explode1
+                    if !p.l.split() {
+                        return p.r.split();
                     }
+                    return true;
                 }
                 (Self::Pair(_), Self::Value(vr)) => {
-                    let explodel = p.l.split(depth + 1);
+                    let explodel = p.l.split();
                     if !explodel && *vr > 9 {
-                        p.r = El::Pair(Box::new(Pair {
-                            l: El::Value(*vr / 2),
-                            r: El::Value((*vr + 1) / 2),
-                        }));
-                        let mut s = String::new();
-                        p.r.print(&mut s);
-                        dbg!("pair,value", s);
+                        p.r = Self::new(Self::Value(*vr / 2), Self::Value((*vr + 1) / 2));
                         return true;
                     }
-                    explodel
+                    return explodel;
                 }
                 (Self::Value(vl), Self::Pair(_)) => {
                     if *vl > 9 {
-                        p.l = El::Pair(Box::new(Pair {
-                            l: El::Value(*vl / 2),
-                            r: El::Value((*vl + 1) / 2),
-                        }));
-                        let mut s = String::new();
-                        p.l.print(&mut s);
-                        dbg!("value,pair", s);
-                        true
+                        p.l = Self::new(Self::Value(*vl / 2), Self::Value((*vl + 1) / 2));
+                        return true;
                     } else {
-                        p.r.split(depth + 1)
+                        return p.r.split();
                     }
                 }
                 (Self::Value(vl), Self::Value(vr)) => {
                     if *vl > 9 {
-                        p.l = El::Pair(Box::new(Pair {
-                            l: El::Value(*vl / 2),
-                            r: El::Value((*vl + 1) / 2),
-                        }));
+                        p.l = Self::new(Self::Value(*vl / 2), Self::Value((*vl + 1) / 2));
                         return true;
                     }
                     if *vr > 9 {
-                        p.r = El::Pair(Box::new(Pair {
-                            l: El::Value(*vr / 2),
-                            r: El::Value((*vr + 1) / 2),
-                        }));
+                        p.r = Self::new(Self::Value(*vr / 2), Self::Value((*vr + 1) / 2));
                         return true;
                     }
-                    false
+                    return false;
                 }
-            },
-            Self::Value(_) => todo!(),
-        }
-    }
-
-    fn print(&self, s: &mut String) {
-        match self {
-            El::Pair(p) => {
-                s.push('[');
-                p.l.print(s);
-                s.push(',');
-                p.r.print(s);
-                s.push(']');
             }
-            El::Value(v) => s.push_str(&v.to_string()),
+        }
+        unreachable!()
+    }
+
+    fn magnitude(&self) -> u32 {
+        match self {
+            Self::Pair(p) => 3 * p.l.magnitude() + 2 * p.r.magnitude(),
+            Self::Value(v) => *v as u32,
         }
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 struct Pair {
-    l: El,
-    r: El,
+    l: Elem,
+    r: Elem,
 }
 
-fn parse_pair(input: &str) -> IResult<&str, El> {
+fn parse_pair(input: &str) -> IResult<&str, Elem> {
     let parse_pair = map(
         delimited(
-            complete::char('['),
-            separated_pair(parse_pair, complete::char(','), parse_pair),
-            complete::char(']'),
+            char('['),
+            separated_pair(parse_pair, char(','), parse_pair),
+            char(']'),
         ),
-        |(l, r)| El::Pair(Box::new(Pair { l, r })),
+        |(l, r)| Elem::new(l, r),
     );
-    let parse_integer = map(complete::u8, El::Value);
-
+    let parse_integer = map(complete::u8, Elem::Value);
     alt((parse_pair, parse_integer))(input)
 }
 
@@ -192,16 +175,23 @@ mod day18 {
 
     use super::*;
 
-    const INPUT: &'static str = "[[[[7,0],[7,7]],[[7,7],[7,8]]],[[[7,7],[8,8]],[[7,7],[8,7]]]]
-[7,[5,[[3,8],[1,4]]]]";
+    const INPUT: &'static str = "[[[0,[5,8]],[[1,7],[9,6]]],[[4,[1,2]],[[1,4],2]]]
+[[[5,[2,8]],4],[5,[[9,9],0]]]
+[6,[[[6,2],[5,6]],[[7,6],[4,7]]]]
+[[[6,[0,7]],[0,9]],[4,[9,[9,0]]]]
+[[[7,[6,4]],[3,[1,3]]],[[[5,5],1],9]]
+[[6,[[7,3],[3,2]]],[[[3,8],[5,7]],4]]
+[[[[5,4],[7,7]],8],[[8,3],8]]
+[[9,3],[[9,9],[6,[4,9]]]]
+[[2,[[7,7],7]],[[5,8],[[9,3],[0,2]]]]
+[[[[5,2],5],[8,[3,7]]],[[5,[7,5]],[4,4]]]";
 
     #[test]
     fn part_1() {
         assert_eq!(part1(INPUT), 4140);
     }
     #[test]
-    #[ignore]
     fn part_2() {
-        assert_eq!(part2(INPUT), "");
+        assert_eq!(part2(INPUT), 3993);
     }
 }
