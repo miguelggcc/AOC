@@ -34,7 +34,7 @@ pub fn part2(input: &str) -> u32 {
     max
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 enum Elem {
     Pair(Box<(Elem, Elem)>),
     Value(u8),
@@ -45,63 +45,58 @@ impl Elem {
         Self::Pair(Box::new((l, r)))
     }
     fn reduce(&mut self) {
-        while self.explode(0).0 || self.split() {}
+        while self.explode(0).is_some() || self.split() {}
     }
-    fn explode(&mut self, depth: u8) -> (bool, u8, u8) {
+    fn explode(&mut self, depth: u8) -> Option<(u8, u8)> {
         match self {
             Self::Pair(p) if depth == 4 => {
-                if let Elem::Value(v0) = p.0 {
-                    if let Elem::Value(v1) = p.1 {
-                        *self = Elem::Value(0);
-                        return (true, v0, v1);
-                    }
+                if let (Elem::Value(v0), Elem::Value(v1)) = p.as_ref() {
+                    let explode = Some((*v0, *v1));
+                    *self = Elem::Value(0);
+                    return explode;
                 }
             }
             Self::Pair(p) => match (&mut p.0, &mut p.1) {
                 (Self::Pair(_), Self::Pair(_)) => {
-                    let (exploded1, vl1, vr1) = p.0.explode(depth + 1);
-                    if exploded1 {
-                        p.1.add_left(vr1);
-                        return (true, vl1, 0);
-                    } else {
-                        let (exploded2, vl2, vr2) = p.1.explode(depth + 1);
-                        p.0.add_right(vl2);
-                        return (exploded2, 0, vr2);
+                    if let Some((v0, v1)) = p.0.explode(depth + 1) {
+                        p.1.add_left(v1);
+                        return Some((v0, 0));
+                    }
+                    if let Some((v0, v1)) = p.1.explode(depth + 1) {
+                        p.0.add_right(v0);
+                        return Some((0, v1));
                     }
                 }
-                (Self::Pair(_), Self::Value(vr)) => {
-                    let (exploded, vl, vr2) = p.0.explode(depth + 1);
-                    *vr += vr2;
-                    return (exploded, vl, 0);
+                (Self::Value(_), Self::Value(_)) => return None,
+                (_, Self::Value(v)) => {
+                    if let Some((v0, v1)) = p.0.explode(depth + 1) {
+                        *v += v1;
+                        return Some((v0, 0));
+                    }
                 }
-                (Self::Value(vl), Self::Pair(_)) => {
-                    let (exploded, vl2, vr) = p.1.explode(depth + 1);
-                    *vl += vl2;
-                    return (exploded, 0, vr);
+                (Self::Value(v), _) => {
+                    if let Some((v0, v1)) = p.1.explode(depth + 1) {
+                        *v += v0;
+                        return Some((0, v1));
+                    }
                 }
-                (Self::Value(_), Self::Value(_)) => return (false, 0, 0),
             },
             _ => unreachable!(),
         }
-
-        (false, 0, 0)
+        None
     }
 
     fn add_left(&mut self, value: u8) {
-        if value>0{
         match self {
             Self::Pair(p) => p.0.add_left(value),
             Self::Value(v) => *v += value,
         }
     }
-    }
     fn add_right(&mut self, value: u8) {
-        if value>0{
         match self {
-            Self::Pair(p)=> p.1.add_right(value),
+            Self::Pair(p) => p.1.add_right(value),
             Self::Value(v) => *v += value,
         }
-    }
     }
     fn split(&mut self) -> bool {
         match self {
