@@ -21,116 +21,104 @@ pub fn part2(input: &str) -> u32 {
         .lines()
         .map(|l| parse_pair(l).finish().unwrap().1)
         .collect();
-    numbers
-        .iter()
-        .enumerate()
-        .flat_map(|(i, n1)| {
-            numbers.iter().enumerate().filter_map(move |(j, n2)| {
-                (i != j).then(|| {
-                    let mut pair = Elem::new(n1.clone(), n2.clone());
-                    pair.reduce();
-                    pair.magnitude()
-                })
-            })
-        })
-        .max()
-        .unwrap()
+    let mut max = 0;
+    for i in 0..numbers.len() {
+        for j in 0..numbers.len() {
+            if i != j {
+                let mut pair = Elem::new(numbers[i].clone(), numbers[j].clone());
+                pair.reduce();
+                max = max.max(pair.magnitude())
+            }
+        }
+    }
+    max
 }
 
 #[derive(Clone, Debug)]
 enum Elem {
-    Pair(Box<Pair>),
+    Pair(Box<(Elem, Elem)>),
     Value(u8),
 }
 
 impl Elem {
     fn new(l: Self, r: Self) -> Self {
-        Self::Pair(Box::new(Pair { l, r }))
+        Self::Pair(Box::new((l, r)))
     }
     fn reduce(&mut self) {
         while self.explode(0).0 || self.split() {}
     }
     fn explode(&mut self, depth: u8) -> (bool, u8, u8) {
-        let (exploded, vl, vr, explode) = match self {
-            Self::Pair(p) => match (&mut p.l, &mut p.r) {
+        match self {
+            Self::Pair(p) if depth == 4 => {
+                if let Elem::Value(v0) = p.0 {
+                    if let Elem::Value(v1) = p.1 {
+                        *self = Elem::Value(0);
+                        return (true, v0, v1);
+                    }
+                }
+            }
+            Self::Pair(p) => match (&mut p.0, &mut p.1) {
                 (Self::Pair(_), Self::Pair(_)) => {
-                    let (exploded1, vl1, vr1) = p.l.explode(depth + 1);
-                    p.r.add_left(vr1);
-                    if !exploded1 {
-                        let (exploded2, vl2, vr2) = p.r.explode(depth + 1);
-                        p.l.add_right(vl2);
-                        (exploded1 || exploded2, vl1, vr2, false)
+                    let (exploded1, vl1, vr1) = p.0.explode(depth + 1);
+                    if exploded1 {
+                        p.1.add_left(vr1);
+                        return (true, vl1, 0);
                     } else {
-                        (exploded1, vl1, 0, false)
+                        let (exploded2, vl2, vr2) = p.1.explode(depth + 1);
+                        p.0.add_right(vl2);
+                        return (exploded2, 0, vr2);
                     }
                 }
                 (Self::Pair(_), Self::Value(vr)) => {
-                    let (exploded, vl, vr2) = p.l.explode(depth + 1);
+                    let (exploded, vl, vr2) = p.0.explode(depth + 1);
                     *vr += vr2;
-                    (exploded, vl, 0, false)
+                    return (exploded, vl, 0);
                 }
                 (Self::Value(vl), Self::Pair(_)) => {
-                    let (exploded, vl2, vr) = p.r.explode(depth + 1);
+                    let (exploded, vl2, vr) = p.1.explode(depth + 1);
                     *vl += vl2;
-                    (exploded, 0, vr, false)
+                    return (exploded, 0, vr);
                 }
-                (Self::Value(vl), Self::Value(vr)) => {
-                    if depth >= 4 {
-                        (true, *vl, *vr, true)
-                    } else {
-                        (false, 0, 0, false)
-                    }
-                }
+                (Self::Value(_), Self::Value(_)) => return (false, 0, 0),
             },
             _ => unreachable!(),
-        };
-        if explode {
-            *self = Self::Value(0);
         }
-        (exploded, vl, vr)
+
+        (false, 0, 0)
     }
 
     fn add_left(&mut self, value: u8) {
+        if value>0{
         match self {
-            Self::Pair(p) => p.l.add_left(value),
+            Self::Pair(p) => p.0.add_left(value),
             Self::Value(v) => *v += value,
         }
     }
+    }
     fn add_right(&mut self, value: u8) {
+        if value>0{
         match self {
-            Self::Pair(p) => p.r.add_right(value),
+            Self::Pair(p)=> p.1.add_right(value),
             Self::Value(v) => *v += value,
         }
+    }
     }
     fn split(&mut self) -> bool {
         match self {
-            Self::Pair(p) => {
-                if !p.l.split() {
-                    return p.r.split();
-                }
+            Self::Pair(p) => p.0.split() || p.1.split(),
+            Self::Value(v) if *v > 9 => {
+                *self = Self::new(Self::Value(*v / 2), Self::Value((*v + 1) / 2));
                 true
             }
-            Self::Value(v) => {
-                if *v > 9 {
-                    *self = Self::new(Self::Value(*v / 2), Self::Value((*v + 1) / 2));
-                    return true;
-                }
-                false
-            }
+            _ => false,
         }
     }
     fn magnitude(&self) -> u32 {
         match self {
-            Self::Pair(p) => 3 * p.l.magnitude() + 2 * p.r.magnitude(),
+            Self::Pair(p) => 3 * p.0.magnitude() + 2 * p.1.magnitude(),
             Self::Value(v) => *v as u32,
         }
     }
-}
-
-#[derive(Clone, Debug)]
-struct Pair {
-    l: Elem,
-    r: Elem,
 }
 
 fn parse_pair(input: &str) -> IResult<&str, Elem> {
