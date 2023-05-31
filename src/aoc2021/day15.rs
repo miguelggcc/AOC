@@ -55,7 +55,7 @@ fn find_best_path(map: Vec<u32>, nx: usize, ny: usize) -> u32 {
     panic!("path not found")
 }
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Eq, PartialEq)]
 struct Walker {
     risk: u32,
     index: usize,
