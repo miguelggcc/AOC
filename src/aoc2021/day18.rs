@@ -103,46 +103,22 @@ impl Elem {
         }
     }
     fn split(&mut self) -> bool {
-        if let Self::Pair(p) = self {
-            match (&mut p.l, &mut p.r) {
-                (Self::Pair(_), Self::Pair(_)) => {
-                    if !p.l.split() {
-                        return p.r.split();
-                    }
+        match self {
+            Self::Pair(p) => {
+                if !p.l.split() {
+                    return p.r.split();
+                }
+                true
+            }
+            Self::Value(v) => {
+                if *v > 9 {
+                    *self = Self::new(Self::Value(*v / 2), Self::Value((*v + 1) / 2));
                     return true;
                 }
-                (Self::Pair(_), Self::Value(vr)) => {
-                    let explodel = p.l.split();
-                    if !explodel && *vr > 9 {
-                        p.r = Self::new(Self::Value(*vr / 2), Self::Value((*vr + 1) / 2));
-                        return true;
-                    }
-                    return explodel;
-                }
-                (Self::Value(vl), Self::Pair(_)) => {
-                    if *vl > 9 {
-                        p.l = Self::new(Self::Value(*vl / 2), Self::Value((*vl + 1) / 2));
-                        return true;
-                    } else {
-                        return p.r.split();
-                    }
-                }
-                (Self::Value(vl), Self::Value(vr)) => {
-                    if *vl > 9 {
-                        p.l = Self::new(Self::Value(*vl / 2), Self::Value((*vl + 1) / 2));
-                        return true;
-                    }
-                    if *vr > 9 {
-                        p.r = Self::new(Self::Value(*vr / 2), Self::Value((*vr + 1) / 2));
-                        return true;
-                    }
-                    return false;
-                }
+                false
             }
         }
-        unreachable!()
     }
-
     fn magnitude(&self) -> u32 {
         match self {
             Self::Pair(p) => 3 * p.l.magnitude() + 2 * p.r.magnitude(),
@@ -166,8 +142,8 @@ fn parse_pair(input: &str) -> IResult<&str, Elem> {
         ),
         |(l, r)| Elem::new(l, r),
     );
-    let parse_integer = map(complete::u8, Elem::Value);
-    alt((parse_pair, parse_integer))(input)
+    let parse_value = map(complete::u8, Elem::Value);
+    alt((parse_pair, parse_value))(input)
 }
 
 #[cfg(test)]
