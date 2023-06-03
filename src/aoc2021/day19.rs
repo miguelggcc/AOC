@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use nom::{
     branch::permutation,
     bytes::complete::take_until,
@@ -11,32 +13,10 @@ pub fn part1(input: &str) -> usize {
     let scanners = parse(input).finish().unwrap().1;
     let all_r = get_rotations();
 
-    let distances: Vec<_> = scanners
-        .iter()
-        .map(|s| {
-            let mut v = s
-                .iter()
-                .enumerate()
-                .flat_map(|(j, &b1)| {
-                    s.iter().skip(j + 1).map(move |&b2| {
-                        let p = (b2.0 - b1.0, b2.1 - b1.1, b2.2 - b1.2);
-                        (p.0 * p.0 + p.1 * p.1 + p.2 * p.2, (b1, b2))
-                    })
-                })
-                .collect::<Vec<_>>();
-            v.sort_unstable_by_key(|p| p.0);
-            v
-        })
-        .collect();
+    let distances = get_distances(&scanners);
 
     let mut total = scanners[0].clone();
-    let mut stack = vec![(
-        0,
-        Transformation {
-            translation: (0, 0, 0),
-            rotation: vec![],
-        },
-    )];
+    let mut stack = vec![(0, Transformation::default())];
     let mut visited = vec![false; distances.len()];
 
     while let Some((index, transformation)) = stack.pop() {
@@ -49,45 +29,106 @@ pub fn part1(input: &str) -> usize {
             .for_each(|(j, other)| {
                 let pairs: Vec<_> = distances[index]
                     .iter()
-                    .filter_map(|d1| {
-                        if let Some(d2) = other.iter().find(|d2| d2.0 == d1.0) {
-                            return Some((d1.1, d2.1));
+                    .flat_map(|(d, pair1)| {
+                        if let Some(pair2) = other.get(&d) {
+                            Some((*pair1, pair2))
                         } else {
                             None
                         }
                     })
                     .collect();
                 if pairs.len() >= 12 * 11 / 2 {
-                    let pair = pairs
+                    let (pair, new_rotation, translation) = pairs
                         .iter()
-                        .find(|(p, _)| {
-                            (p.0 .0 != 0 || p.0 .1 != 0 || p.0 .2 != 0)
-                                && (p.0 .0 != p.0 .1 && p.0 .0 != p.0 .2 && p.0 .1 != p.0 .2)
+                        .find_map(|pair| {
+                            for r in all_r.iter() {
+                                let temp = (
+                                    r.iter().fold(pair.1 .0, |new_p, t| t.transform(new_p)),
+                                    r.iter().fold(pair.1 .1, |new_p, t| t.transform(new_p)),
+                                );
+                                if let Some(translation) = get_translation(temp, pair.0) {
+                                    return Some((pair, r.clone(), translation));
+                                }
+                            }
+                            None
                         })
-                        .expect("no unique pairs");
-                    let old_pair = (
-                        transformation
-                            .rotation
-                            .iter()
-                            .rev()
-                            .fold(pair.0 .0, |new_p, t| t.transform(new_p)),
-                        transformation
-                            .rotation
-                            .iter()
-                            .rev()
-                            .fold(pair.0 .1, |new_p, t| t.transform(new_p)),
+                        .expect("rotation not found");
+
+                    let translation = transformation
+                        .rotation
+                        .iter()
+                        .rev()
+                        .fold(translation, |new_p, t| t.transform(new_p));
+
+                    let mut new_t = transformation.clone();
+                    new_t.rotation.extend(new_rotation.into_iter().rev());
+                    let temp = (
+                        rotate(&new_t.rotation, pair.1 .0),
+                        rotate(&new_t.rotation, pair.1 .1),
                     );
-                    let new_rotation = all_r
+                    new_t.rotation = Rotation::get_rotation((pair.1 .0, temp.0));
+                    new_t.translation = translate(new_t.translation, translation);
+                    total.extend(scanners[j].iter().map(|&p| new_t.t_and_r(p)));
+                    stack.push((j, new_t));
+                }
+            });
+    }
+    total.sort_unstable();
+    total.dedup();
+    total.len()
+}
+
+pub fn part2(input: &str) -> u32 {
+    let scanners = parse(input).finish().unwrap().1;
+    let all_r = get_rotations();
+
+    let distances = get_distances(&scanners);
+
+    let mut stack = vec![(0, Transformation::default())];
+    let mut visited = vec![false; distances.len()];
+    let mut translations = Vec::with_capacity(scanners.len());
+
+    while let Some((index, transformation)) = stack.pop() {
+        visited[index] = true;
+
+        distances
+            .iter()
+            .enumerate()
+            .filter(|(j, _)| !visited[*j])
+            .for_each(|(j, other)| {
+                let pairs: Vec<_> = distances[index]
+                    .iter()
+                    .flat_map(|(d, pair1)| {
+                        if let Some(pair2) = other.get(&d) {
+                            Some((*pair1, pair2))
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+                if pairs.len() >= 12 * 11 / 2 {
+                    let (pair, new_rotation, translation) = pairs
                         .iter()
-                        .find(|r| {
-                            let temp = (
-                                r.iter().fold(pair.1 .0, |new_p, t| t.transform(new_p)),
-                                r.iter().fold(pair.1 .1, |new_p, t| t.transform(new_p)),
-                            );
-                            get_translation(temp, pair.0).is_some()
+                        .find_map(|pair| {
+                            for r in all_r.iter() {
+                                let temp = (
+                                    r.iter().fold(pair.1 .0, |new_p, t| t.transform(new_p)),
+                                    r.iter().fold(pair.1 .1, |new_p, t| t.transform(new_p)),
+                                );
+                                if let Some(translation) = get_translation(temp, pair.0) {
+                                    return Some((pair, r.clone(), translation));
+                                }
+                            }
+                            None
                         })
-                        .unwrap()
-                        .clone();
+                        .expect("rotation not found");
+
+                    let translation = transformation
+                        .rotation
+                        .iter()
+                        .rev()
+                        .fold(translation, |new_p, t| t.transform(new_p));
+
                     let mut new_t = transformation.clone();
                     new_t.rotation.extend(new_rotation.into_iter().rev());
                     let temp = (
@@ -102,31 +143,53 @@ pub fn part1(input: &str) -> usize {
                             .rev()
                             .fold(pair.1 .1, |new_p, t| t.transform(new_p)),
                     );
-                    let translation = get_translation(temp, old_pair).expect("pair not found");
+                    new_t.rotation = Rotation::get_rotation((pair.1 .0, temp.0));
                     new_t.translation = translate(new_t.translation, translation);
-                    total.extend(scanners[j].iter().map(|&p| {
-                        translate(
-                            new_t.translation,
-                            new_t
-                                .rotation
-                                .iter()
-                                .rev()
-                                .fold(p, |new_p, t| t.transform(new_p)),
-                        )
-                    }));
+                    translations.push(new_t.translation);
                     stack.push((j, new_t));
                 }
             });
     }
-    total.sort_unstable();
-    total.dedup();
-    total.len()
+    translations
+        .iter()
+        .enumerate()
+        .flat_map(|(i, s1)| {
+            translations
+                .iter()
+                .skip(i + 1)
+                .map(|s2| s1.0.abs_diff(s2.0) + s1.1.abs_diff(s2.1) + s1.2.abs_diff(s2.2))
+        })
+        .max()
+        .unwrap()
 }
 
-#[derive(Debug, Clone)]
+fn get_distances(scanners: &[Vec<Point>]) -> Vec<HashMap<i32, (Point, Point)>> {
+    scanners
+        .iter()
+        .map(|s| {
+            s.iter()
+                .enumerate()
+                .flat_map(|(j, &b1)| {
+                    s.iter().skip(j + 1).map(move |&b2| {
+                        let p = (b2.0 - b1.0, b2.1 - b1.1, b2.2 - b1.2);
+                        (p.0 * p.0 + p.1 * p.1 + p.2 * p.2, (b1, b2))
+                    })
+                })
+                .collect::<HashMap<_, _>>()
+        })
+        .collect()
+}
+
+#[derive(Default, Clone)]
 struct Transformation {
     translation: Point,
     rotation: Vec<Rotation>,
+}
+
+impl Transformation {
+    fn t_and_r(&self, p: Point) -> Point {
+        translate(self.translation, rotate(&self.rotation, p))
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -176,30 +239,17 @@ impl Rotation {
         t
     }
 }
-fn get_translation(pair1: (Point, Point), pair2: (Point, Point)) -> Option<Point> {
-    let delta1 = (
-        pair2.0 .0 - pair1.0 .0,
-        pair2.0 .1 - pair1.0 .1,
-        pair2.0 .2 - pair1.0 .2,
-    );
-    let delta2 = (
-        pair2.1 .0 - pair1.1 .0,
-        pair2.1 .1 - pair1.1 .1,
-        pair2.1 .2 - pair1.1 .2,
-    );
+fn rotate(r: &[Rotation], p: Point) -> Point {
+    r.iter().rev().fold(p, |new_p, t| t.transform(new_p))
+}
+fn get_translation(p1: (Point, Point), p2: (Point, Point)) -> Option<Point> {
+    let delta1 = (p2.0 .0 - p1.0 .0, p2.0 .1 - p1.0 .1, p2.0 .2 - p1.0 .2);
+    let delta2 = (p2.1 .0 - p1.1 .0, p2.1 .1 - p1.1 .1, p2.1 .2 - p1.1 .2);
     if delta1 == delta2 {
         return Some(delta1);
     }
-    let delta1 = (
-        pair2.0 .0 - pair1.1 .0,
-        pair2.0 .1 - pair1.1 .1,
-        pair2.0 .2 - pair1.1 .2,
-    );
-    let delta2 = (
-        pair2.1 .0 - pair1.0 .0,
-        pair2.1 .1 - pair1.0 .1,
-        pair2.1 .2 - pair1.0 .2,
-    );
+    let delta1 = (p2.0 .0 - p1.1 .0, p2.0 .1 - p1.1 .1, p2.0 .2 - p1.1 .2);
+    let delta2 = (p2.1 .0 - p1.0 .0, p2.1 .1 - p1.0 .1, p2.1 .2 - p1.0 .2);
     if delta1 == delta2 {
         return Some(delta1);
     }
@@ -210,9 +260,9 @@ fn translate(p: Point, other: Point) -> Point {
 }
 
 fn get_rotations() -> Vec<Vec<Rotation>> {
-    let roll = [Rotation::SwapXZ, Rotation::NegX];
-    let cw = [Rotation::SwapYZ, Rotation::NegZ];
-    let ccw = [Rotation::SwapYZ, Rotation::NegY];
+    let roll = [Rotation::NegX, Rotation::SwapXZ];
+    let cw = [Rotation::NegZ, Rotation::SwapYZ];
+    let ccw = [Rotation::NegY, Rotation::SwapYZ];
     let mut p = (1, 2, 3);
     let p0 = p;
     let mut v = vec![vec![]];
@@ -227,121 +277,6 @@ fn get_rotations() -> Vec<Vec<Rotation>> {
         }
     }
     v
-}
-
-pub fn part2(input: &str) -> u32 {
-    let scanners = parse(input).finish().unwrap().1;
-    let all_r = get_rotations();
-
-    let distances: Vec<_> = scanners
-        .iter()
-        .map(|s| {
-            let mut v = s
-                .iter()
-                .enumerate()
-                .flat_map(|(j, &b1)| {
-                    s.iter().skip(j + 1).map(move |&b2| {
-                        let p = (b2.0 - b1.0, b2.1 - b1.1, b2.2 - b1.2);
-                        (p.0 * p.0 + p.1 * p.1 + p.2 * p.2, (b1, b2))
-                    })
-                })
-                .collect::<Vec<_>>();
-            v.sort_unstable_by_key(|p| p.0);
-            v
-        })
-        .collect();
-
-    let mut stack = vec![(
-        0,
-        Transformation {
-            translation: (0, 0, 0),
-            rotation: vec![],
-        },
-    )];
-    let mut visited = vec![false; distances.len()];
-    let mut translations = vec![];
-
-    while let Some((index, transformation)) = stack.pop() {
-        visited[index] = true;
-
-        distances
-            .iter()
-            .enumerate()
-            .filter(|(j, _)| !visited[*j])
-            .for_each(|(j, other)| {
-                let pairs: Vec<_> = distances[index]
-                    .iter()
-                    .filter_map(|d1| {
-                        if let Some(d2) = other.iter().find(|d2| d2.0 == d1.0) {
-                            return Some((d1.1, d2.1));
-                        } else {
-                            None
-                        }
-                    })
-                    .collect();
-                if pairs.len() >= 12 * 11 / 2 {
-                    let pair = pairs
-                        .iter()
-                        .find(|(p, _)| {
-                            (p.0 .0 != 0 || p.0 .1 != 0 || p.0 .2 != 0)
-                                && (p.0 .0 != p.0 .1 && p.0 .0 != p.0 .2 && p.0 .1 != p.0 .2)
-                        })
-                        .expect("no unique pairs");
-                    let old_pair = (
-                        transformation
-                            .rotation
-                            .iter()
-                            .rev()
-                            .fold(pair.0 .0, |new_p, t| t.transform(new_p)),
-                        transformation
-                            .rotation
-                            .iter()
-                            .rev()
-                            .fold(pair.0 .1, |new_p, t| t.transform(new_p)),
-                    );
-                    let new_rotation = all_r
-                        .iter()
-                        .find(|r| {
-                            let temp = (
-                                r.iter().fold(pair.1 .0, |new_p, t| t.transform(new_p)),
-                                r.iter().fold(pair.1 .1, |new_p, t| t.transform(new_p)),
-                            );
-                            get_translation(temp, pair.0).is_some()
-                        })
-                        .unwrap()
-                        .clone();
-                    let mut new_t = transformation.clone();
-                    new_t.rotation.extend(new_rotation.into_iter().rev());
-                    let temp = (
-                        new_t
-                            .rotation
-                            .iter()
-                            .rev()
-                            .fold(pair.1 .0, |new_p, t| t.transform(new_p)),
-                        new_t
-                            .rotation
-                            .iter()
-                            .rev()
-                            .fold(pair.1 .1, |new_p, t| t.transform(new_p)),
-                    );
-                    let translation = get_translation(temp, old_pair).expect("pair not found");
-                    new_t.translation = translate(new_t.translation, translation);
-                    translations.push(new_t.translation);
-                    stack.push((j, new_t));
-                }
-            });
-    }
-    translations
-        .iter()
-        .enumerate()
-        .flat_map(|(i, s1)| {
-            translations
-                .iter()
-                .skip(i + 1)
-                .map(|s2| s1.0.abs_diff(s2.0) + s1.1.abs_diff(s2.1) + s1.2.abs_diff(s2.2))
-        })
-        .max()
-        .unwrap()
 }
 
 type Point = (i32, i32, i32);
@@ -367,142 +302,15 @@ mod day19 {
 
     use super::*;
 
-    const INPUT: &'static str = "--- scanner 0 ---
-404,-588,-901
-528,-643,409
--838,591,734
-390,-675,-793
--537,-823,-458
--485,-357,347
--345,-311,381
--661,-816,-575
--876,649,763
--618,-824,-621
-553,345,-567
-474,580,667
--447,-329,318
--584,868,-557
-544,-627,-890
-564,392,-477
-455,729,728
--892,524,684
--689,845,-530
-423,-701,434
-7,-33,-71
-630,319,-379
-443,580,662
--789,900,-551
-459,-707,401
+    const INPUT: &'static str = "--- scanner 0 ---\n404,-588,-901\n528,-643,409\n-838,591,734\n390,-675,-793\n-537,-823,-458\n-485,-357,347\n-345,-311,381\n-661,-816,-575\n-876,649,763\n-618,-824,-621\n553,345,-567\n474,580,667\n-447,-329,318\n-584,868,-557\n544,-627,-890\n564,392,-477\n455,729,728\n-892,524,684\n-689,845,-530\n423,-701,434\n7,-33,-71\n630,319,-379\n443,580,662\n-789,900,-551\n459,-707,401
 
---- scanner 1 ---
-686,422,578
-605,423,415
-515,917,-361
--336,658,858
-95,138,22
--476,619,847
--340,-569,-846
-567,-361,727
--460,603,-452
-669,-402,600
-729,430,532
--500,-761,534
--322,571,750
--466,-666,-811
--429,-592,574
--355,545,-477
-703,-491,-529
--328,-685,520
-413,935,-424
--391,539,-444
-586,-435,557
--364,-763,-893
-807,-499,-711
-755,-354,-619
-553,889,-390
+--- scanner 1 ---\n686,422,578\n605,423,415\n515,917,-361\n-336,658,858\n95,138,22\n-476,619,847\n-340,-569,-846\n567,-361,727\n-460,603,-452\n669,-402,600\n729,430,532\n-500,-761,534\n-322,571,750\n-466,-666,-811\n-429,-592,574\n-355,545,-477\n703,-491,-529\n-328,-685,520\n413,935,-424\n-391,539,-444\n586,-435,557\n-364,-763,-893\n807,-499,-711\n755,-354,-619\n553,889,-390
 
---- scanner 2 ---
-649,640,665
-682,-795,504
--784,533,-524
--644,584,-595
--588,-843,648
--30,6,44
--674,560,763
-500,723,-460
-609,671,-379
--555,-800,653
--675,-892,-343
-697,-426,-610
-578,704,681
-493,664,-388
--671,-858,530
--667,343,800
-571,-461,-707
--138,-166,112
--889,563,-600
-646,-828,498
-640,759,510
--630,509,768
--681,-892,-333
-673,-379,-804
--742,-814,-386
-577,-820,562
+--- scanner 2 ---\n649,640,665\n682,-795,504\n-784,533,-524\n-644,584,-595\n-588,-843,648\n-30,6,44\n-674,560,763\n500,723,-460\n609,671,-379\n-555,-800,653\n-675,-892,-343\n697,-426,-610\n578,704,681\n493,664,-388\n-671,-858,530\n-667,343,800\n571,-461,-707\n-138,-166,112\n-889,563,-600\n646,-828,498\n640,759,510\n-630,509,768\n-681,-892,-333\n673,-379,-804\n-742,-814,-386\n577,-820,562
 
---- scanner 3 ---
--589,542,597
-605,-692,669
--500,565,-823
--660,373,557
--458,-679,-417
--488,449,543
--626,468,-788
-338,-750,-386
-528,-832,-391
-562,-778,733
--938,-730,414
-543,643,-506
--524,371,-870
-407,773,750
--104,29,83
-378,-903,-323
--778,-728,485
-426,699,580
--438,-605,-362
--469,-447,-387
-509,732,623
-647,635,-688
--868,-804,481
-614,-800,639
-595,780,-596
+--- scanner 3 ---\n-589,542,597\n605,-692,669\n-500,565,-823\n-660,373,557\n-458,-679,-417\n-488,449,543\n-626,468,-788\n338,-750,-386\n528,-832,-391\n562,-778,733\n-938,-730,414\n543,643,-506\n-524,371,-870\n407,773,750\n-104,29,83\n378,-903,-323\n-778,-728,485\n426,699,580\n-438,-605,-362\n-469,-447,-387\n509,732,623\n647,635,-688\n-868,-804,481\n614,-800,639\n595,780,-596
 
---- scanner 4 ---
-727,592,562
--293,-554,779
-441,611,-461
--714,465,-776
--743,427,-804
--660,-479,-426
-832,-632,460
-927,-485,-438
-408,393,-506
-466,436,-512
-110,16,151
--258,-428,682
--393,719,612
--211,-452,876
-808,-476,-593
--575,615,604
--485,667,467
--680,325,-822
--627,-443,-432
-872,-547,-609
-833,512,582
-807,604,487
-839,-516,451
-891,-625,532
--652,-548,-490
-30,-46,-14";
+--- scanner 4 ---\n727,592,562\n-293,-554,779\n441,611,-461\n-714,465,-776\n-743,427,-804\n-660,-479,-426\n832,-632,460\n927,-485,-438\n408,393,-506\n466,436,-512\n110,16,151\n-258,-428,682\n-393,719,612\n-211,-452,876\n808,-476,-593\n-575,615,604\n-485,667,467\n-680,325,-822\n-627,-443,-432\n872,-547,-609\n833,512,582\n807,604,487\n839,-516,451\n891,-625,532\n-652,-548,-490\n30,-46,-14";
 
     #[test]
     fn part_1() {
