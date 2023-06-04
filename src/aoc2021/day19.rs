@@ -37,7 +37,7 @@ pub fn part1(input: &str) -> usize {
                     .iter()
                     .filter(|(p, _)| p.0 .0 != p.1 .0 && p.0 .1 != p.1 .1 && p.0 .2 != p.1 .2)
                     .find_map(|pair| {
-                        for r in all_r.iter(){
+                        for r in all_r.iter() {
                             let temp = (rotate(r, pair.1 .0), rotate(r, pair.1 .1));
 
                             if let Some(translation) = get_translation(temp, pair.0) {
@@ -46,7 +46,7 @@ pub fn part1(input: &str) -> usize {
                                     println!("{:?}", temp);
                                     let r2 = &[Rotation::SwapYZ, Rotation::NegY];
                                     let temp2 = (rotate(r2, pair.1 .0), rotate(r2, pair.1 .1));
-                                   dbg!(get_translation(temp2, pair.0));
+                                    dbg!(get_translation(temp2, pair.0));
                                 }
                                 return Some((r.clone(), translation));
                             }
@@ -69,7 +69,7 @@ pub fn part1(input: &str) -> usize {
     total.sort_unstable();
     total.dedup();
     let l = total.len();
-    if l != 313 && l!=79{
+    if l != 313 && l != 79 {
         panic!("{}", l);
     }
     l
