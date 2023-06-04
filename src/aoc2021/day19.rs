@@ -21,61 +21,55 @@ pub fn part1(input: &str) -> usize {
 
     while let Some((index, transformation)) = stack.pop() {
         visited[index] = true;
-
-        distances
-            .iter()
-            .enumerate()
-            .filter(|(j, _)| !visited[*j])
-            .for_each(|(j, other)| {
-                let pairs: Vec<_> = distances[index]
+        for (j, other) in distances.iter().enumerate().filter(|(j, _)| !visited[*j]) {
+            let pairs: Vec<_> = distances[index]
+                .iter()
+                .flat_map(|(d, pair1)| {
+                    if let Some(pair2) = other.get(&d) {
+                        Some((*pair1, pair2))
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            if pairs.len() >= 12 * 11 / 2 {
+                let (mut new_rotation, translation) = pairs
                     .iter()
-                    .flat_map(|(d, pair1)| {
-                        if let Some(pair2) = other.get(&d) {
-                            Some((*pair1, pair2))
-                        } else {
-                            None
-                        }
-                    })
-                    .collect();
-                if pairs.len() >= 12 * 11 / 2 {
-                    let (pair, new_rotation, translation) = pairs
-                        .iter()
-                        .find_map(|pair| {
-                            for r in all_r.iter() {
-                                let temp = (
-                                    r.iter().fold(pair.1 .0, |new_p, t| t.transform(new_p)),
-                                    r.iter().fold(pair.1 .1, |new_p, t| t.transform(new_p)),
-                                );
-                                if let Some(translation) = get_translation(temp, pair.0) {
-                                    return Some((pair, r.clone(), translation));
+                    .filter(|(p, _)| p.0 .0 != p.1 .0 && p.0 .1 != p.1 .1 && p.0 .2 != p.1 .2)
+                    .find_map(|pair| {
+                        for r in all_r.iter() {
+                            let temp = (rotate(r, pair.1 .0), rotate(r, pair.1 .1));
+
+                            if let Some(translation) = get_translation(temp, pair.0) {
+                                if pair.0 == ((573, 710, 600), (-736, 663, -709)) {
+                                    println!("{:?},{:?}, {:?}", pair, &r, translation);
+                                    println!("{:?}", temp);
                                 }
+                                return Some((r.clone(), translation));
                             }
-                            None
-                        })
-                        .expect("rotation not found");
+                        }
+                        None
+                    })
+                    .expect("rotation not found");
 
-                    let translation = transformation
-                        .rotation
-                        .iter()
-                        .rev()
-                        .fold(translation, |new_p, t| t.transform(new_p));
-
-                    let mut new_t = transformation.clone();
-                    new_t.rotation.extend(new_rotation.into_iter().rev());
-                    let temp = (
-                        rotate(&new_t.rotation, pair.1 .0),
-                        rotate(&new_t.rotation, pair.1 .1),
-                    );
-                    new_t.rotation = Rotation::get_rotation((pair.1 .0, temp.0));
-                    new_t.translation = translate(new_t.translation, translation);
-                    total.extend(scanners[j].iter().map(|&p| new_t.t_and_r(p)));
-                    stack.push((j, new_t));
-                }
-            });
+                let translation = rotate(&transformation.rotation, translation);
+                let mut new_t = transformation.clone();
+                new_rotation.extend(new_t.rotation);
+                let temp = rotate(&new_rotation, (1, 2, 3));
+                new_t.rotation = Rotation::get_rotation((temp, (1, 2, 3)));
+                new_t.translation = translate(new_t.translation, translation);
+                total.extend(scanners[j].iter().map(|&p| new_t.t_and_r(p)));
+                stack.push((j, new_t));
+            }
+        }
     }
     total.sort_unstable();
     total.dedup();
-    total.len()
+    let l = total.len();
+    if l != 313 && l!=79{
+        panic!("{}", l);
+    }
+    l
 }
 
 pub fn part2(input: &str) -> u32 {
@@ -90,65 +84,40 @@ pub fn part2(input: &str) -> u32 {
 
     while let Some((index, transformation)) = stack.pop() {
         visited[index] = true;
-
-        distances
-            .iter()
-            .enumerate()
-            .filter(|(j, _)| !visited[*j])
-            .for_each(|(j, other)| {
-                let pairs: Vec<_> = distances[index]
+        for (j, other) in distances.iter().enumerate().filter(|(j, _)| !visited[*j]) {
+            let pairs: Vec<_> = distances[index]
+                .iter()
+                .flat_map(|(d, pair1)| {
+                    if let Some(pair2) = other.get(&d) {
+                        Some((*pair1, pair2))
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            if pairs.len() >= 12 * 11 / 2 {
+                let (mut new_rotation, translation) = pairs
                     .iter()
-                    .flat_map(|(d, pair1)| {
-                        if let Some(pair2) = other.get(&d) {
-                            Some((*pair1, pair2))
-                        } else {
-                            None
-                        }
-                    })
-                    .collect();
-                if pairs.len() >= 12 * 11 / 2 {
-                    let (pair, new_rotation, translation) = pairs
-                        .iter()
-                        .find_map(|pair| {
-                            for r in all_r.iter() {
-                                let temp = (
-                                    r.iter().fold(pair.1 .0, |new_p, t| t.transform(new_p)),
-                                    r.iter().fold(pair.1 .1, |new_p, t| t.transform(new_p)),
-                                );
-                                if let Some(translation) = get_translation(temp, pair.0) {
-                                    return Some((pair, r.clone(), translation));
-                                }
+                    .find_map(|pair| {
+                        for r in all_r.iter() {
+                            let temp = (rotate(r, pair.1 .0), rotate(r, pair.1 .1));
+                            if let Some(translation) = get_translation(pair.0, temp) {
+                                return Some((r.clone(), translation));
                             }
-                            None
-                        })
-                        .expect("rotation not found");
-
-                    let translation = transformation
-                        .rotation
-                        .iter()
-                        .rev()
-                        .fold(translation, |new_p, t| t.transform(new_p));
-
-                    let mut new_t = transformation.clone();
-                    new_t.rotation.extend(new_rotation.into_iter().rev());
-                    let temp = (
-                        new_t
-                            .rotation
-                            .iter()
-                            .rev()
-                            .fold(pair.1 .0, |new_p, t| t.transform(new_p)),
-                        new_t
-                            .rotation
-                            .iter()
-                            .rev()
-                            .fold(pair.1 .1, |new_p, t| t.transform(new_p)),
-                    );
-                    new_t.rotation = Rotation::get_rotation((pair.1 .0, temp.0));
-                    new_t.translation = translate(new_t.translation, translation);
-                    translations.push(new_t.translation);
-                    stack.push((j, new_t));
-                }
-            });
+                        }
+                        None
+                    })
+                    .expect("rotation not found");
+                let translation = rotate(&transformation.rotation, translation);
+                let mut new_t = transformation.clone();
+                new_rotation.extend(new_t.rotation);
+                let temp = rotate(&new_rotation, (1, 2, 3));
+                new_t.rotation = Rotation::get_rotation((temp, (1, 2, 3)));
+                new_t.translation = translate(new_t.translation, translation);
+                translations.push(new_t.translation);
+                stack.push((j, new_t));
+            }
+        }
     }
     translations
         .iter()
@@ -163,7 +132,7 @@ pub fn part2(input: &str) -> u32 {
         .unwrap()
 }
 
-fn get_distances(scanners: &[Vec<Point>]) -> Vec<HashMap<i32, (Point, Point)>> {
+fn get_distances(scanners: &[Vec<Point>]) -> Vec<HashMap<(u32, u32, u32), (Point, Point)>> {
     scanners
         .iter()
         .map(|s| {
@@ -171,8 +140,19 @@ fn get_distances(scanners: &[Vec<Point>]) -> Vec<HashMap<i32, (Point, Point)>> {
                 .enumerate()
                 .flat_map(|(j, &b1)| {
                     s.iter().skip(j + 1).map(move |&b2| {
-                        let p = (b2.0 - b1.0, b2.1 - b1.1, b2.2 - b1.2);
-                        (p.0 * p.0 + p.1 * p.1 + p.2 * p.2, (b1, b2))
+                        let p = (
+                            b2.0.abs_diff(b1.0),
+                            b2.1.abs_diff(b1.1),
+                            b2.2.abs_diff(b1.2),
+                        );
+                        (
+                            (
+                                p.0 + p.1 + p.2,
+                                p.0.min(p.1).min(p.2),
+                                p.0.max(p.1).max(p.2),
+                            ),
+                            (b1, b2),
+                        )
                     })
                 })
                 .collect::<HashMap<_, _>>()
@@ -180,7 +160,7 @@ fn get_distances(scanners: &[Vec<Point>]) -> Vec<HashMap<i32, (Point, Point)>> {
         .collect()
 }
 
-#[derive(Default, Clone)]
+#[derive(Debug, Default, Clone)]
 struct Transformation {
     translation: Point,
     rotation: Vec<Rotation>,
@@ -240,7 +220,7 @@ impl Rotation {
     }
 }
 fn rotate(r: &[Rotation], p: Point) -> Point {
-    r.iter().rev().fold(p, |new_p, t| t.transform(new_p))
+    r.iter().fold(p, |new_p, t| t.transform(new_p))
 }
 fn get_translation(p1: (Point, Point), p2: (Point, Point)) -> Option<Point> {
     let delta1 = (p2.0 .0 - p1.0 .0, p2.0 .1 - p1.0 .1, p2.0 .2 - p1.0 .2);
@@ -260,19 +240,17 @@ fn translate(p: Point, other: Point) -> Point {
 }
 
 fn get_rotations() -> Vec<Vec<Rotation>> {
-    let roll = [Rotation::NegX, Rotation::SwapXZ];
-    let cw = [Rotation::NegZ, Rotation::SwapYZ];
-    let ccw = [Rotation::NegY, Rotation::SwapYZ];
+    let roll = [Rotation::SwapXZ, Rotation::NegX];
+    let cw = [Rotation::SwapYZ, Rotation::NegZ];
+    let ccw = [Rotation::SwapYZ, Rotation::NegY];
     let mut p = (1, 2, 3);
     let p0 = p;
     let mut v = vec![vec![]];
     for r in 0..6 {
-        roll.iter().for_each(|t| p = t.transform(p));
+        p = rotate(&roll, p);
         v.push(Rotation::get_rotation((p0, p)));
         for _ in 0..3 {
-            if r % 2 == 0 { &cw } else { &ccw }
-                .iter()
-                .for_each(|t| p = t.transform(p));
+            p = rotate(if r % 2 == 0 { &cw } else { &ccw }, p);
             v.push(Rotation::get_rotation((p0, p)));
         }
     }
