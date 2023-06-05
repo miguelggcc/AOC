@@ -22,12 +22,12 @@ pub fn part2(input: &str) -> u64 {
         .lines()
         .map(|l: &str| Player::new(0, l.split_once(": ").unwrap().1.parse::<u16>().unwrap()));
     let (p0, p1) = (p_iter.next().unwrap(), p_iter.next().unwrap());
-    let (u0, u1) = play_turn(p0, p1, &mut HashMap::new());
+    let (u0, u1) = next_turn(p0, p1, &mut HashMap::new());
     u0.max(u1)
 }
 const DICE: [(u16, u64); 7] = [(3, 1), (4, 3), (5, 6), (6, 7), (7, 6), (8, 3), (9, 1)];
 
-fn play_turn(p0: Player, p1: Player, c: &mut HashMap<u64, (u64, u64)>) -> (u64, u64) {
+fn next_turn(p0: Player, p1: Player, c: &mut HashMap<u64, (u64, u64)>) -> (u64, u64) {
     if p1.s >= 21 {
         return (0, 1);
     }
@@ -37,7 +37,7 @@ fn play_turn(p0: Player, p1: Player, c: &mut HashMap<u64, (u64, u64)>) -> (u64, 
     let mut out = (0, 0);
     for (dice, rep) in DICE.iter() {
         let score = (p0.p + dice - 1) % 10 + 1;
-        let (np1, np0) = play_turn(p1.clone(), Player::new(p0.s + score, score), c);
+        let (np1, np0) = next_turn(p1.clone(), Player::new(p0.s + score, score), c);
         out = (out.0 + rep * np0, out.1 + rep * np1);
     }
     c.insert(p0.get_key(&p1), out);
