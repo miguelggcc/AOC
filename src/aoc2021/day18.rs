@@ -9,7 +9,7 @@ use nom::{
 pub fn part1(input: &str) -> u32 {
     let mut lines = input.lines();
     let mut root_pair = parse_pair(lines.next().unwrap()).finish().unwrap().1;
-    for line in lines{
+    for line in lines {
         root_pair = Elem::new(root_pair, parse_pair(line).finish().unwrap().1);
         root_pair.reduce();
     }
