@@ -1,18 +1,20 @@
 use std::iter::once;
 
 pub fn part1(input: &str) -> usize {
-    let (iea, nx, ny, grid) = parse(input);
-    enhance(iea, grid.into_iter().flatten().collect(), nx, ny, 2)
+    let (iea, grid) = parse(input);
+    enhance(iea, grid, 2)
 }
 
 pub fn part2(input: &str) -> usize {
-    let (iea, nx, ny, grid) = parse(input);
-    enhance(iea, grid.into_iter().flatten().collect(), nx, ny, 50)
+    let (iea, grid) = parse(input);
+    enhance(iea, grid, 50)
 }
 
-fn enhance(iea: Vec<bool>, mut grid: Vec<bool>, mut nx: isize, mut ny: isize, ss: usize) -> usize {
+fn enhance(iea: Vec<bool>, grid0: Vec<Vec<bool>>, steps: usize) -> usize {
+    let (mut nx, mut ny) = (grid0[0].len() as isize, grid0.len() as isize);
+    let mut grid: Vec<_> = grid0.into_iter().flatten().collect();
     let mut copy;
-    for step in 0..ss {
+    for step in 0..steps {
         copy = grid.clone();
         grid.extend(once(false).cycle().take((2 * (nx + 2) + 2 * ny) as usize));
         nx += 2;
@@ -38,14 +40,14 @@ fn enhance(iea: Vec<bool>, mut grid: Vec<bool>, mut nx: isize, mut ny: isize, ss
     grid.into_iter().filter(|&c| c).count()
 }
 
-fn parse(input: &str) -> (Vec<bool>, isize, isize, Vec<Vec<bool>>) {
+fn parse(input: &str) -> (Vec<bool>, Vec<Vec<bool>>) {
     let mut lines = input.lines();
     let iea: Vec<_> = lines.next().unwrap().chars().map(|c| c == '#').collect();
     assert!(lines.next().unwrap().is_empty());
     let grid: Vec<Vec<_>> = lines
         .map(|l| l.chars().map(|c| c == '#').collect())
         .collect();
-    (iea, grid[0].len() as isize, grid.len() as isize, grid)
+    (iea, grid)
 }
 
 const DELTAS: [(isize, isize); 9] = [
