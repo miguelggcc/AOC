@@ -14,9 +14,9 @@ fn enhance(iea: Vec<bool>, mut grid: Vec<bool>, mut nx: isize, mut ny: isize, ss
     let mut copy;
     for step in 0..ss {
         copy = grid.clone();
+        grid.extend(once(false).cycle().take((2 * (nx + 2) + 2 * ny) as usize));
         nx += 2;
         ny += 2;
-        grid.extend(once(false).cycle().take((2 * (nx + 2) + 2 * ny) as usize));
         for y in 0..ny {
             for x in 0..nx {
                 let index =
