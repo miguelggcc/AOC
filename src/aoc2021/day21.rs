@@ -1,44 +1,64 @@
+use std::collections::HashMap;
+
 pub fn part1(input: &str) -> u32 {
-    let mut p0 = input
+    let mut p_iter = input
         .lines()
-        .map(|l| l.split_once(": ").unwrap().1.parse::<u32>().unwrap());
-    let mut players = [(0, p0.next().unwrap()), (0, p0.next().unwrap())];
+        .map(|l| Player::new(0, l.split_once(": ").unwrap().1.parse::<u16>().unwrap()));
+    let (mut p0, mut p1) = (p_iter.next().unwrap(), p_iter.next().unwrap());
     let mut dice = (1..101).cycle();
     let mut rolled = 0;
-    while players.iter().all(|&p| p.0 < 1000) {
-        let mut score = players[0].1 + (&mut dice).take(3).sum::<u32>();
-        while score > 10 {
-            score = score % 11 + score / 11;
-        }
-        players[0] = (players[0].0 + score, score);
+    while p1.s < 1000 {
+        let d = (&mut dice).take(3).sum::<u16>();
         rolled += 3;
-        players.rotate_left(1);
+        let score = (p0.p + d - 1) % 10 + 1;
+        p0 = Player::new(p0.s + score, score);
+        std::mem::swap(&mut p0, &mut p1);
     }
-    players.into_iter().map(|p| p.0).min().unwrap() * rolled
+    rolled * (p0.s.min(p1.s)) as u32
 }
 
 pub fn part2(input: &str) -> u64 {
-    let p0: Vec<_> = input
+    let mut p_iter = input
         .lines()
-        .map(|l| l.split_once(": ").unwrap().1.parse::<u32>().unwrap())
-        .collect();
-    let (u0, u1) = play((0, p0[0]), (0, p0[1]));
+        .map(|l: &str| Player::new(0, l.split_once(": ").unwrap().1.parse::<u16>().unwrap()));
+    let (p0, p1) = (p_iter.next().unwrap(), p_iter.next().unwrap());
+    let (u0, u1) = play_turn(p0, p1, &mut HashMap::new());
     u0.max(u1)
 }
-const DICE: [(u32, u64); 7] = [(3, 1), (4, 3), (5, 6), (6, 7), (7, 6), (8, 3), (9, 1)];
+const DICE: [(u16, u64); 7] = [(3, 1), (4, 3), (5, 6), (6, 7), (7, 6), (8, 3), (9, 1)];
 
-fn play(mut p0: (u32, u32), p1: (u32, u32)) -> (u64, u64) {
-    if p1.0 >= 21 {
+fn play_turn(p0: Player, p1: Player, c: &mut HashMap<u64, (u64, u64)>) -> (u64, u64) {
+    if p1.s >= 21 {
         return (0, 1);
     }
+    if let Some(cached_out) = c.get(&p0.get_key(&p1)) {
+        return *cached_out;
+    }
     let mut out = (0, 0);
-    for (d, rep) in DICE.iter() {
-        let score = (p0.1 + d-1) % 10 + 1;
-        p0 = (p0.0 + score, score);
-        let (np1, np0) = play(p1, p0);
+    for (dice, rep) in DICE.iter() {
+        let score = (p0.p + dice - 1) % 10 + 1;
+        let (np1, np0) = play_turn(p1.clone(), Player::new(p0.s + score, score), c);
         out = (out.0 + rep * np0, out.1 + rep * np1);
     }
+    c.insert(p0.get_key(&p1), out);
     out
+}
+
+#[derive(Clone)]
+struct Player {
+    p: u16,
+    s: u16,
+}
+
+impl Player {
+    fn new(s: u16, p: u16) -> Self {
+        Self { s, p }
+    }
+    fn get_key(&self, other: &Self) -> u64 {
+        let self_key = (self.s as u64) << 16 | self.p as u64;
+        let other_key = (other.s as u64) << 16 | other.p as u64;
+        other_key << 32 | self_key
+    }
 }
 
 #[cfg(test)]
@@ -55,6 +75,6 @@ Player 2 starting position: 8";
     }
     #[test]
     fn part_2() {
-        assert_eq!(part2(INPUT), 341960390180808);
+        assert_eq!(part2(INPUT), 444356092776315);
     }
 }
