@@ -44,8 +44,8 @@ pub fn part2(input: &str) -> i32 {
     }
     total
 }
-
-fn parse(input: &str) -> IResult<&str, ((i32, i32), (i32, i32))> {
+type Range = ((i32, i32), (i32, i32));
+fn parse(input: &str) -> IResult<&str, Range> {
     preceded(
         tag("target area: x="),
         separated_pair(

@@ -91,7 +91,7 @@ pub fn part2(input: &str) -> u32 {
             let pairs: Vec<_> = distances[index]
                 .iter()
                 .flat_map(|(d, pair1)| {
-                    if let Some(pair2) = other.get(&d) {
+                    if let Some(pair2) = other.get(d) {
                         Some((*pair1, pair2))
                     } else {
                         None

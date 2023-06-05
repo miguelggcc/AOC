@@ -55,9 +55,9 @@ impl Player {
         Self { s, p }
     }
     fn get_key(&self, other: &Self) -> u64 {
-        let self_key = (self.s as u64) << 16 | self.p as u64;
-        let other_key = (other.s as u64) << 16 | other.p as u64;
-        other_key << 32 | self_key
+        let self32 = (self.s as u64) << 16 | self.p as u64;
+        let other32 = (other.s as u64) << 16 | other.p as u64;
+        other32 << 32 | self32
     }
 }
 
