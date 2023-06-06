@@ -26,19 +26,15 @@ pub fn part2(input: &str) -> i64 {
 fn get_cuboids(steps: Vec<(i8, Cuboid)>) -> i64 {
     let mut subsets = vec![];
     let mut add = vec![];
-    for (switch,cuboid) in steps {
-        
+    for (switch,cuboid) in steps {      
         if switch == 1 {
             add.push((switch, cuboid));
         }
-
         for (switch2, subset) in subsets.iter() {
             if let Some(intersection) = overlap(cuboid, subset) {
                 add.push((-1 * switch2, intersection));
             }
-        }
-
-        
+        }  
         subsets.extend(add.drain(..));
     }
     subsets
@@ -52,6 +48,7 @@ fn get_cuboids(steps: Vec<(i8, Cuboid)>) -> i64 {
         })
         .sum()
 }
+
 fn overlap(mut c1: Cuboid, c2: &Cuboid) -> Option<Cuboid> {
     //if c1.iter().zip(c2.iter()).all(|(a,b)|(b.0>a.0 && b.0<a.1)||(b.1<a.1 && b.1>a.0)){
     for i in 0..3{
@@ -63,6 +60,7 @@ fn overlap(mut c1: Cuboid, c2: &Cuboid) -> Option<Cuboid> {
         Some(c1)
     }
 }
+
 type Cuboid = [(i32, i32); 3];
 fn parse(input: &str) -> IResult<&str, Vec<(i8, Cuboid)>> {
     separated_list1(complete::line_ending, parse_step)(input)
