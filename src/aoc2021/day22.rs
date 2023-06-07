@@ -24,9 +24,9 @@ pub fn part2(input: &str) -> i64 {
 }
 
 fn get_cuboids(steps: Vec<(i8, Cuboid)>) -> i64 {
-    let mut subsets = vec![];
+    let mut subsets = Vec::with_capacity(50_000);
     let mut add = vec![];
-    for (switch,cuboid) in steps {      
+    for (switch, cuboid) in steps {
         if switch == 1 {
             add.push((switch, cuboid));
         }
@@ -34,7 +34,7 @@ fn get_cuboids(steps: Vec<(i8, Cuboid)>) -> i64 {
             if let Some(intersection) = overlap(cuboid, subset) {
                 add.push((-1 * switch2, intersection));
             }
-        }  
+        }
         subsets.extend(add.drain(..));
     }
     subsets
@@ -50,15 +50,13 @@ fn get_cuboids(steps: Vec<(i8, Cuboid)>) -> i64 {
 }
 
 fn overlap(mut c1: Cuboid, c2: &Cuboid) -> Option<Cuboid> {
-    //if c1.iter().zip(c2.iter()).all(|(a,b)|(b.0>a.0 && b.0<a.1)||(b.1<a.1 && b.1>a.0)){
-    for i in 0..3{
+    if c1.iter().zip(c2).any(|(a,b)|b.1<a.0||b.0>a.1){
+        return None
+    }
+    for i in 0..3 {
         c1[i] = (c1[i].0.max(c2[i].0), c1[i].1.min(c2[i].1));
     }
-    if c1[0].0 > c1[0].1 || c1[1].0 > c1[1].1 || c1[2].0 > c1[2].1 {
-        None
-    } else {
-        Some(c1)
-    }
+    Some(c1)
 }
 
 type Cuboid = [(i32, i32); 3];
