@@ -50,8 +50,8 @@ fn get_cuboids(steps: Vec<(i8, Cuboid)>) -> i64 {
 }
 
 fn overlap(mut c1: Cuboid, c2: &Cuboid) -> Option<Cuboid> {
-    if c1.iter().zip(c2).any(|(a,b)|b.1<a.0||b.0>a.1){
-        return None
+    if c1.iter().zip(c2).any(|(a, b)| b.1 < a.0 || b.0 > a.1) {
+        return None;
     }
     for i in 0..3 {
         c1[i] = (c1[i].0.max(c2[i].0), c1[i].1.min(c2[i].1));
