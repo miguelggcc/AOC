@@ -1,39 +1,108 @@
-use std::{collections::{VecDeque, BinaryHeap}, cmp::Ordering};
+use std::{collections::{BinaryHeap}, cmp::Ordering};
 
 pub fn part1(input: &str) -> u32 {
     let mut pos = [vec![], vec![],vec![],vec![],vec![0;7]];
     input.lines().rev().skip(1).take(2).enumerate().for_each(|(j,l)|l.trim().split('#').filter(|s|!s.is_empty()).enumerate().for_each(|(i,a)|pos[i].push(a.chars().next().unwrap() as u8 -b'A'+1)));
-    let mut heap = BinaryHeap::from([State{pos, energy: 0}]);
-    't: while let Some(state) = heap.pop(){
-        if state.pos.iter().take(4).enumerate().all(|(i,room)|room.len()==2&&room.iter().all(|&ar|ar==i as u8+1)){
-            //if state.energy == 15405{println!("{:?}",row); break 't;}
+    return 0/*let mut heap = BinaryHeap::from([State{pos: pos.into_iter().flatten().collect::<Vec<_>>().try_into().unwrap(), energy: 0}]);
+    while let Some(state) = heap.pop(){
+        if state.pos.chunks(2).take(4).enumerate().all(|(i,room)|room.iter().all(|&ar|ar==i as u8+1)){
+           //println!("{:?}",row);
             return state.energy;
         }
-        for (i,a) in state.pos[4].iter().enumerate().filter(|(_,a)|**a!=0){
-            if state.pos[*a as usize-1].is_empty() || (state.pos[*a as usize-1].len()==1 && state.pos[*a as usize-1][0]==*a){
-                let a = state.pos[4][i];
-               if  let Some(distance) = distance_room(i, a, &state.pos[4]){
+        for (i,a) in state.pos.iter().skip(8).enumerate().filter(|(_,a)|**a!=0){
+            let index = 2*(*a as usize-1);
+            if state.pos[index]==0 || (state.pos[index]==*a &&  state.pos[index+1]==0){
+               if  let Some(distance) = distance_room(i, *a, &state.pos[8..]){
                 let mut new_pos = state.pos.clone();
-                new_pos[4][i] = 0;
-                new_pos[a as usize -1].push(a);  
-                //let mut new_row = row.clone();
-                //new_row.push(new_pos.clone().into_iter().flatten().collect::<Vec<_>>());
-                //new_row.push(vec![1-state[a as usize -1].len() as u8 +distance as u8]);
-                heap.push(State{pos: new_pos, energy: state.energy+ (1-state.pos[a as usize -1].len() as u32+distance)*10u32.pow(a as u32-1)});
+                new_pos[8+i] = 0;
+                if new_pos[index]==0{
+                    new_pos[index] = *a;
+                    //let mut new_row = row.clone();
+                    /*new_row.push(new_pos.clone());
+                    new_row.push([1+distance as u8;15]);*/
+                    heap.push(State{pos: new_pos, energy: state.energy+ (1+distance)*10u32.pow(*a as u32-1)});
+                } else{
+                    new_pos[index+1] = *a;
+                    //let mut new_row = row.clone();
+                    /*new_row.push(new_pos.clone());
+                    new_row.push([distance as u8;15]);*/
+                    heap.push(State{pos: new_pos, energy: state.energy+ distance*10u32.pow(*a as u32-1)});
+                }          
             }
         }
         }
-        for (i,room) in state.pos.iter().take(4).enumerate(){
-            if !room.is_empty() && room.iter().any(|&a|a!=i as u8+1){
-                let possible_pos = distance_row(i, &state.pos[4]);
-                for (pos, distance) in possible_pos{
+        for (i,room) in state.pos.chunks(2).take(4).enumerate(){
+            if  room.iter().any(|&a|a!=0 && a!=i as u8+1){
+                let possible_pos = distance_row(i, &state.pos[8..]);
+                for (pos, distance) in possible_pos{              
                     let mut new_pos = state.pos.clone();
-                    let a = new_pos[i].pop().unwrap();
-                    new_pos[4][pos] = a;
+                    if new_pos[2*i+1]==0{
+                        let a = new_pos[2*i];
+                        new_pos[2*i] = 0;
+                        new_pos[8+pos] = a;
+                        /*let mut new_row = row.clone();
+                    new_row.push(new_pos.clone());
+                    new_row.push([1+distance as u8;15]);*/
+                        heap.push(State{pos: new_pos, energy: state.energy+ (1+distance)*10u32.pow(a as u32-1)});
+                    } else{
+                        let a = new_pos[2*i+1] ;
+                        new_pos[2*i+1] = 0;
+                        new_pos[8+pos] = a;
+                        /*let mut new_row = row.clone();
+                        new_row.push(new_pos.clone());
+                        new_row.push([distance as u8;15]);*/
+                        heap.push(State{pos: new_pos, energy: state.energy+ distance*10u32.pow(a as u32-1)});
+                    }              
+                }
+            }
+        }
+
+    }
+    panic!("not found")*/
+}
+
+pub fn part2(input: &str) -> u32 {
+    let mut pos = [vec![], vec![],vec![],vec![],vec![0;7]];
+    let (i1,i2) = input.split_once("  ").unwrap();
+    let insert ="  #D#C#B#A#\n  #D#B#A#C#\n  ";
+    [i1,insert,i2].join("").lines().rev().skip(1).take(4).enumerate().for_each(|(j,l)|l.trim().split('#').filter(|s|!s.is_empty()).enumerate().for_each(|(i,a)|pos[i].push(a.chars().next().unwrap() as u8 -b'A'+1)));
+    let l = pos[0].len();
+    dbg!(l);
+    let mut heap = BinaryHeap::from([State{pos: pos.into_iter().flatten().collect::<Vec<_>>().try_into().unwrap(), energy: 0}]);
+    while let Some(state) = heap.pop(){
+        if state.pos.chunks(l).take(4).enumerate().all(|(i,room)|room.iter().all(|&ar|ar==i as u8+1)){
+           //println!("{:?}",row);
+            return state.energy;
+        }
+        for (i,a) in state.pos.iter().skip(4*l).enumerate().filter(|(_,a)|**a!=0){
+            let index = l*(*a as usize-1);
+            if state.pos[index..index+1].iter().all(|ar|ar==a || ar==&0){
+               if  let Some(distance) = distance_room(i, *a, &state.pos[4*l..]){
+                let mut new_pos = state.pos.clone();
+                new_pos[4*l+i] = 0;
+                    let zero = new_pos[index..index+l].iter().position(|&ar|ar==0).unwrap_or(l-1);
+                    new_pos[index+zero] = *a;
                     //let mut new_row = row.clone();
-                    //new_row.push(new_pos.clone().into_iter().flatten().collect::<Vec<_>>());
-                    //new_row.push(vec![2-room.len() as u8,distance as u8]);
-                   heap.push(State { pos: new_pos, energy: state.energy+ (2-room.len() as u32+distance)*10u32.pow(a as u32-1 )});
+                    /*new_row.push(new_pos.clone());
+                    new_row.push([1+distance as u8;15]);*/
+                    heap.push(State{pos: new_pos, energy: state.energy+ ((l-zero-1) as u32+distance)*10u32.pow(*a as u32-1)});
+                
+            }
+        }
+        }
+        for (i,room) in state.pos.chunks(l).take(4).enumerate(){
+            if  room.iter().any(|&a|a!=0 && a!=i as u8+1){
+                let possible_pos = distance_row(i, &state.pos[4*l..]);
+                for (pos, distance) in possible_pos{              
+                    let mut new_pos = state.pos.clone();
+                    let last = new_pos[l*i..l*i+l].iter().rposition(|&ar|ar!=0).unwrap();
+                        let a = new_pos[l*i+last];
+                        new_pos[l*i+last] = 0;
+                        new_pos[4*l+pos] = a;
+                        /*let mut new_row = row.clone();
+                    new_row.push(new_pos.clone());
+                    new_row.push([1+distance as u8;15]);*/
+                        heap.push(State{pos: new_pos, energy: state.energy+ ((l-1-last) as u32+distance)*10u32.pow(a as u32-1)});          
                 }
             }
         }
@@ -42,15 +111,12 @@ pub fn part1(input: &str) -> u32 {
     panic!("not found")
 }
 
-pub fn part2(_input: &str) -> String {
-    String::from("Not implemented")
-}
-
 #[derive(Eq, PartialEq)]
 struct State {
-    pos:[Vec<u8>;5],
+    pos:[u8;4*4+7],
     energy: u32,
 }
+
 
 impl Ord for State {
     fn cmp(&self, other: &Self) -> Ordering {
@@ -96,7 +162,7 @@ fn distance_room(i0 : usize, room: u8, hall: &[u8])->Option<u32>{
     if sign.is_sign_positive(){
     while i0-room>0.0{    
         i0-=sign;
-        if hall[i0 as usize]!=0{
+        if i0-room>0.0&&hall[i0 as usize]!=0{
             return None
         }
         dist+=if (1..5).contains(&(i0 as usize)){2}else{1};
@@ -104,7 +170,7 @@ fn distance_room(i0 : usize, room: u8, hall: &[u8])->Option<u32>{
     }} else{
         while room-i0>0.0{      
             i0-=sign;
-            if hall[i0 as usize]!=0{
+            if  room-i0>0.0&&hall[i0 as usize]!=0{
                 return None
             }
             dist+=if (2..6).contains(&(i0 as usize)){2}else{1};
@@ -131,8 +197,7 @@ mod day23 {
         assert_eq!(part1(INPUT), 12521);
     }
     #[test]
-    #[ignore]
     fn part_2() {
-        assert_eq!(part2(INPUT), "");
+        assert_eq!(part2(INPUT), 44169);
     }
 }
