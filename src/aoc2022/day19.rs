@@ -50,7 +50,7 @@ fn find_max_geode(bp: &Blueprint, max_time: u8) -> u32 {
             max_geode = max_geode.max(state.geode);
 
             if state.time > 1
-                && (max_geode as u16) < state.geode as u16 + times[state.time as usize] as u16
+                && (max_geode as u16) < state.geode as u16 + times[state.time as usize]
             {
                 states.push_back((state, missed_robots));
             }

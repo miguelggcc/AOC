@@ -72,18 +72,17 @@ impl<const R: usize> State<R> {
             if self.rooms[index..index + l]
                 .iter()
                 .all(|ar| ar == a || *ar == 0)
+                && can_move_to_room(i, *a as usize, &self.hall)
             {
-                if can_move_to_room(i, *a as usize, &self.hall) {
-                    let mut new_state = self.clone();
-                    let zero = new_state.rooms[index..index + l]
-                        .iter()
-                        .position(|&ar| ar == 0)
-                        .unwrap();
-                    std::mem::swap(&mut new_state.rooms[index + zero], &mut new_state.hall[i]);
-                    new_state.energy += ((l - zero - 1) as u32 + dist[*a as usize - 1][i])
-                        * 10u32.pow(*a as u32 - 1);
-                    new_states.push(new_state)
-                }
+                let mut new_state = self.clone();
+                let zero = new_state.rooms[index..index + l]
+                    .iter()
+                    .position(|&ar| ar == 0)
+                    .unwrap();
+                std::mem::swap(&mut new_state.rooms[index + zero], &mut new_state.hall[i]);
+                new_state.energy +=
+                    ((l - zero - 1) as u32 + dist[*a as usize - 1][i]) * 10u32.pow(*a as u32 - 1);
+                new_states.push(new_state)
             }
         }
         for (i, room) in self.rooms.chunks(l).enumerate() {
