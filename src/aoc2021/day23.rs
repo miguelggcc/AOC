@@ -18,18 +18,13 @@ fn get_energy<const R: usize>(input: &str) -> u32 {
     let l = R / 4;
     let mut cache = HashMap::new();
     let dist = get_distances();
-    input[14 * 2..]
-        .lines()
-        .rev()
-        .skip(1)
-        .enumerate()
-        .for_each(|(j, line)| {
-            line.trim()
-                .split('#')
-                .filter(|s| !s.is_empty())
-                .enumerate()
-                .for_each(|(i, a)| rooms[j + i * l] = a.chars().next().unwrap() as u8 - b'A' + 1)
-        });
+    for (j, line) in input[14 * 2..].lines().rev().skip(1).enumerate() {
+        line.trim()
+            .split('#')
+            .filter(|s| !s.is_empty())
+            .enumerate()
+            .for_each(|(i, a)| rooms[j + i * l] = a.chars().next().unwrap() as u8 - b'A' + 1)
+    }
     let mut new_states = vec![];
     let mut heap: BinaryHeap<State<R>> = BinaryHeap::from([State::new(rooms)]);
 
@@ -93,7 +88,7 @@ impl<const R: usize> State<R> {
         }
         for (i, room) in self.rooms.chunks(l).enumerate() {
             if room.iter().any(|&a| a != 0 && a != i as u8 + 1) {
-                for pos in move_hall(i, &self.hall) {
+                for pos in move_to_hall(i, &self.hall) {
                     let mut new_state = self.clone();
                     let last = room.iter().rposition(|&ar| ar != 0).unwrap();
                     let a = room[last];
@@ -135,7 +130,7 @@ fn get_distances() -> [[u32; 7]; 4] {
             .unwrap()
     })
 }
-fn move_hall(r: usize, hall: &[u8]) -> impl Iterator<Item = usize> + '_ {
+fn move_to_hall(r: usize, hall: &[u8]) -> impl Iterator<Item = usize> + '_ {
     let left = hall[..r + 2]
         .iter()
         .rposition(|&ar| ar != 0)
