@@ -14,24 +14,29 @@ pub fn part2(input: &str) -> u32 {
 }
 
 fn get_energy<const R: usize>(input: &str) -> u32 {
-    let mut rooms = [vec![], vec![], vec![], vec![]];
+    let mut rooms = [0; R];
+    let l = R / 4;
     let mut cache = HashMap::new();
     let dist = get_distances();
-    input[14 * 2..].lines().rev().skip(1).for_each(|line| {
-        line.trim()
-            .split('#')
-            .filter(|s| !s.is_empty())
-            .enumerate()
-            .for_each(|(i, a)| rooms[i].push(a.chars().next().unwrap() as u8 - b'A' + 1))
-    });
-    let rooms = rooms.into_iter().flatten().collect::<Vec<_>>();
+    input[14 * 2..]
+        .lines()
+        .rev()
+        .skip(1)
+        .enumerate()
+        .for_each(|(j, line)| {
+            line.trim()
+                .split('#')
+                .filter(|s| !s.is_empty())
+                .enumerate()
+                .for_each(|(i, a)| rooms[j + i * l] = a.chars().next().unwrap() as u8 - b'A' + 1)
+        });
     let mut new_states = vec![];
-    let mut heap: BinaryHeap<State<R>> = BinaryHeap::from([State::new(rooms.try_into().unwrap())]);
+    let mut heap: BinaryHeap<State<R>> = BinaryHeap::from([State::new(rooms)]);
 
     while let Some(state) = heap.pop() {
         if state
             .rooms
-            .chunks(R / 4)
+            .chunks(l)
             .enumerate()
             .all(|(i, room)| room.iter().all(|&ar| ar == i as u8 + 1))
         {
@@ -67,11 +72,11 @@ impl<const R: usize> State<R> {
     }
     fn new_states(self, new_states: &mut Vec<Self>, dist: &[[u32; 7]; 4]) {
         let l = R / 4;
-        for (i, a) in self.hall.iter().enumerate().filter(|(_, a)| **a != 0) {
+        for (i, a) in self.hall.iter().enumerate().filter(|&(_, a)| *a != 0) {
             let index = l * (*a as usize - 1);
             if self.rooms[index..index + l]
                 .iter()
-                .all(|ar| ar == a || ar == &0)
+                .all(|ar| ar == a || *ar == 0)
             {
                 if can_move_to_room(i, *a as usize, &self.hall) {
                     let mut new_state = self.clone();
@@ -88,10 +93,10 @@ impl<const R: usize> State<R> {
         }
         for (i, room) in self.rooms.chunks(l).enumerate() {
             if room.iter().any(|&a| a != 0 && a != i as u8 + 1) {
-                for pos in move_row(i, &self.hall) {
+                for pos in move_hall(i, &self.hall) {
                     let mut new_state = self.clone();
                     let last = room.iter().rposition(|&ar| ar != 0).unwrap();
-                    let a = new_state.rooms[l * i + last];
+                    let a = room[last];
                     std::mem::swap(&mut new_state.hall[pos], &mut new_state.rooms[l * i + last]);
                     new_state.energy +=
                         ((l - 1 - last) as u32 + dist[i][pos]) * 10u32.pow(a as u32 - 1);
@@ -113,24 +118,24 @@ impl<const R: usize> Ord for State<R> {
         other.energy.cmp(&self.energy)
     }
 }
-
 impl<const R: usize> PartialOrd for State<R> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
+
 fn get_distances() -> [[u32; 7]; 4] {
     let rooms: [u32; 4] = [2, 4, 6, 8];
     rooms.map(|room| {
-        (0..11)
-            .filter(|i| rooms.binary_search(i).is_err())
+        (0..=10)
+            .filter(|i| !rooms.contains(i))
             .map(|i| 1 + room.abs_diff(i))
             .collect::<Vec<_>>()
             .try_into()
             .unwrap()
     })
 }
-fn move_row<'a>(r: usize, hall: &'a [u8]) -> impl Iterator<Item = usize> + 'a {
+fn move_hall(r: usize, hall: &[u8]) -> impl Iterator<Item = usize> + '_ {
     let left = hall[..r + 2]
         .iter()
         .rposition(|&ar| ar != 0)
