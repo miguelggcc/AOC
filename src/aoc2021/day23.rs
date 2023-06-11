@@ -4,7 +4,7 @@ use std::{
 };
 
 pub fn part1(input: &str) -> u32 {
-    get_energy::<8>(&input)
+    get_energy::<8>(input)
 }
 
 pub fn part2(input: &str) -> u32 {
