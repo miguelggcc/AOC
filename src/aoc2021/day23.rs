@@ -65,7 +65,7 @@ impl<const R: usize> State<R> {
             energy: 0,
         }
     }
-    fn new_states(self, new_states: &mut Vec<Self>, dist: &DISTS) {
+    fn new_states(self, new_states: &mut Vec<Self>, dist: &[[u32; 7]; 4]) {
         let l = R / 4;
         for (i, a) in self.hall.iter().enumerate().filter(|(_, a)| **a != 0) {
             let index = l * (*a as usize - 1);
@@ -119,8 +119,7 @@ impl<const R: usize> PartialOrd for State<R> {
         Some(self.cmp(other))
     }
 }
-type DISTS = [[u32; 7]; 4];
-fn get_distances() -> DISTS {
+fn get_distances() -> [[u32; 7]; 4] {
     let rooms: [u32; 4] = [2, 4, 6, 8];
     rooms.map(|room| {
         (0..11)
