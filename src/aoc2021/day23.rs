@@ -39,9 +39,10 @@ fn get_energy<const R: usize>(input: &str) -> u32 {
         }
         state.new_states(&mut new_states, &dist);
         for new_state in new_states.drain(..) {
-            let c = cache.get(&new_state.get_key()).unwrap_or(&u32::MAX);
+            let key = new_state.get_key();
+            let c = cache.get(&key).unwrap_or(&u32::MAX);
             if c > &new_state.energy {
-                cache.insert(new_state.get_key(), new_state.energy);
+                cache.insert(key, new_state.energy);
                 heap.push(new_state);
             }
         }
@@ -72,28 +73,28 @@ impl<const R: usize> State<R> {
                 .iter()
                 .all(|ar| ar == a || ar == &0)
             {
-                if let Some(distance) = move_room(i, *a as usize, &self.hall, dist) {
+                if can_move_to_room(i, *a as usize, &self.hall) {
                     let mut new_state = self.clone();
                     let zero = new_state.rooms[index..index + l]
                         .iter()
                         .position(|&ar| ar == 0)
                         .unwrap();
                     std::mem::swap(&mut new_state.rooms[index + zero], &mut new_state.hall[i]);
-                    new_state.energy +=
-                        ((l - zero - 1) as u32 + distance) * 10u32.pow(*a as u32 - 1);
+                    new_state.energy += ((l - zero - 1) as u32 + dist[*a as usize - 1][i])
+                        * 10u32.pow(*a as u32 - 1);
                     new_states.push(new_state)
                 }
             }
         }
         for (i, room) in self.rooms.chunks(l).enumerate() {
             if room.iter().any(|&a| a != 0 && a != i as u8 + 1) {
-                for (pos, distance) in move_row(i, &self.hall, dist) {
+                for pos in move_row(i, &self.hall) {
                     let mut new_state = self.clone();
                     let last = room.iter().rposition(|&ar| ar != 0).unwrap();
                     let a = new_state.rooms[l * i + last];
                     std::mem::swap(&mut new_state.hall[pos], &mut new_state.rooms[l * i + last]);
                     new_state.energy +=
-                        ((l - 1 - last) as u32 + distance) * 10u32.pow(a as u32 - 1);
+                        ((l - 1 - last) as u32 + dist[i][pos]) * 10u32.pow(a as u32 - 1);
                     new_states.push(new_state)
                 }
             }
@@ -121,25 +122,16 @@ impl<const R: usize> PartialOrd for State<R> {
 type DISTS = [[u32; 7]; 4];
 fn get_distances() -> DISTS {
     let rooms: [u32; 4] = [2, 4, 6, 8];
-    rooms
-        .iter()
-        .map(|room| {
-            (0..11)
-                .filter(|i| rooms.binary_search(i).is_err())
-                .map(|i| 1 + room.abs_diff(i))
-                .collect::<Vec<_>>()
-                .try_into()
-                .unwrap()
-        })
-        .collect::<Vec<_>>()
-        .try_into()
-        .unwrap()
+    rooms.map(|room| {
+        (0..11)
+            .filter(|i| rooms.binary_search(i).is_err())
+            .map(|i| 1 + room.abs_diff(i))
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap()
+    })
 }
-fn move_row<'a>(
-    r: usize,
-    hall: &'a [u8],
-    dist: &'a DISTS,
-) -> impl Iterator<Item = (usize, u32)> + 'a {
+fn move_row<'a>(r: usize, hall: &'a [u8]) -> impl Iterator<Item = usize> + 'a {
     let left = hall[..r + 2]
         .iter()
         .rposition(|&ar| ar != 0)
@@ -148,16 +140,12 @@ fn move_row<'a>(
         .enumerate()
         .skip(left.wrapping_add(1))
         .take_while(|(_, ar)| **ar == 0)
-        .map(move |(i, _)| (i, dist[r][i]))
+        .map(|(i, _)| i)
 }
-fn move_room(i0: usize, a: usize, hall: &[u8], dist: &DISTS) -> Option<u32> {
-    if hall[(a + 1).min(i0 + 1)..i0.max(a + 1)]
+fn can_move_to_room(i0: usize, a: usize, hall: &[u8]) -> bool {
+    hall[(a + 1).min(i0 + 1)..i0.max(a + 1)]
         .iter()
-        .any(|&ar| ar > 0)
-    {
-        return None;
-    }
-    Some(dist[a - 1][i0])
+        .all(|&ar| ar == 0)
 }
 
 #[cfg(test)]
