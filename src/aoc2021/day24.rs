@@ -1,82 +1,61 @@
-use nom::multi::separated_list1;
+use nom::{
+    bytes::complete::{tag, take_until},
+    character::complete,
+    multi::separated_list1,
+    sequence::{separated_pair, terminated},
+    Finish, IResult,
+};
 
 pub fn part1(input: &str) -> u64 {
-    for line in input.lines() {
-        let mut var = [0; 4];
-        let n = 345345345;
-        let (inst, rhs) = line.split_once(" ").unwrap();
-        match inst {
-            "inp" => var[0] = n,
-            "add" => {
-                let (a, b) = rhs.split_once(" ").unwrap();
-                var[get_index(a)] += get_var(b, &var);
+    let inst = parse(input).finish().unwrap().1;
+    let mut zstack = vec![];
+    let mut digits = [9; 14];
+    for (i, v) in inst.iter().enumerate() {
+        if v.1 > 9 && v.0 == 1 {
+            zstack.push((v.2, i))
+        } else {
+            let (offset, other_i) = zstack.pop().unwrap();
+            let delta = offset + v.1;
+            if delta > 0 {
+                digits[other_i] -= delta;
+            } else {
+                digits[i] += delta;
             }
-            "mul" => {
-                let (a, b) = rhs.split_once(" ").unwrap();
-                var[get_index(a)] *= get_var(b, &var);
-            }
-            "div" => {
-                let (a, b) = rhs.split_once(" ").unwrap();
-                var[get_index(a)] /= get_var(b, &var);
-            }
-            "mod" => {
-                let (a, b) = rhs.split_once(" ").unwrap();
-                var[get_index(a)] %= get_var(b, &var);
-            }
-            "eql" => {
-                let (a, b) = rhs.split_once(" ").unwrap();
-                var[get_index(a)] = u64::from(var[get_index(a)] == get_var(b, &var));
-            }
-            e => panic!("Unknown instruction {e}"),
         }
     }
-    0
+    digits.into_iter().fold(0, |acc, d| acc * 10 + d as u64)
 }
 
-pub fn part2(_input: &str) -> String {
-    String::from("Not implemented")
-}
-
-fn get_var(input: &str, var: &[u64]) -> u64 {
-    if let Ok(v) = input.parse::<u64>() {
-        return v;
+pub fn part2(input: &str) -> u64 {
+    let inst = parse(input).finish().unwrap().1;
+    let mut zstack = vec![];
+    let mut digits = [1; 14];
+    for (i, v) in inst.iter().enumerate() {
+        if v.1 > 9 && v.0 == 1 {
+            zstack.push((v.2, i))
+        } else {
+            let (offset, other_i) = zstack.pop().unwrap();
+            let delta = offset + v.1;
+            if delta > 0 {
+                digits[i] += delta;
+            } else {
+                digits[other_i] -= delta;
+            }
+        }
     }
-    var[get_index(input)]
+    digits.into_iter().fold(0, |acc, d| acc * 10 + d as u64)
 }
 
-fn get_index(n: &str) -> usize {
-    (n.chars().next().unwrap() as u8 - b'w') as usize
+fn parse(input: &str) -> IResult<&str, Vec<(i32, i32, i32)>> {
+    separated_list1(tag("\r\nmul y x\r\nadd z y"), parse_block)(input)
 }
 
-enum Instructions {
-    Inp(usize),
-    AddVar(usize, usize),
-    AddInt(usize, u32),
-    MulVar(usize, usize),
-    MulInt(usize, u32),
-    DivVar(usize, usize),
-    DivInt(usize, u32),
-    ModVar(usize, usize),
-    ModInt(usize, u32),
-    EqlVar(usize, usize),
-    EqlInt(usize, u32),
+fn parse_block(input: &str) -> IResult<&str, (i32, i32, i32)> {
+    let (input, _) = terminated(take_until("div z "), tag("div z "))(input)?;
+    let (input, (a, b)) = separated_pair(complete::i32, tag("\r\nadd x "), complete::i32)(input)?;
+    let (input, _) = terminated(take_until("w\r\nadd y "), tag("w\r\nadd y "))(input)?;
+    let (input, c) = complete::i32(input)?;
+    Ok((input, (a, b, c)))
 }
 
-#[cfg(test)]
-mod day24 {
-
-    use super::*;
-
-    const INPUT: &'static str = "inp w\nadd z w\nmod z 2\ndiv w 2
-add y w\nmod y 2\ndiv w 2\nadd x w\nmod x 2\ndiv w 2\nmod w 2";
-
-    #[test]
-    fn part_1() {
-        assert_eq!(part1(INPUT), 0);
-    }
-    #[test]
-    #[ignore]
-    fn part_2() {
-        assert_eq!(part2(INPUT), "");
-    }
-}
+//no tests since there's no example case
