@@ -8,23 +8,23 @@ use nom::{
 
 pub fn part1(input: &str) -> u64 {
     let inst = parse(input).finish().unwrap().1;
-    get_nomad(inst, Mode::Max)
+    get_monad(inst, Mode::Max)
 }
 
 pub fn part2(input: &str) -> u64 {
     let inst = parse(input).finish().unwrap().1;
-    get_nomad(inst, Mode::Min)
+    get_monad(inst, Mode::Min)
 }
 
 //This solution assumes that:
-//1. Only div z A, add x B, add y C change between inp w blocks
+//1. Only div z A, add x B, add y C change between inp w instructions
 //2. If A=1 then B is always >9, otherwise A=26 and B is <=9
 //3. The two cases described in 2 always happen the same number of times
 
-fn get_nomad(inst: Vec<(i8, i8, i8)>, mode: Mode) -> u64 {
+fn get_monad(inst: Vec<(i8, i8, i8)>, mode: Mode) -> u64 {
     let mut zstack = vec![];
     let mut digits = [mode.clone() as i8; 14];
-    for (i, v) in inst.iter().enumerate() {
+    for (i, v) in inst.into_iter().enumerate() {
         if v.1 > 9 && v.0 == 1 {
             zstack.push((v.2, i))
         } else {
