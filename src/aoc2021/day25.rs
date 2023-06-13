@@ -14,12 +14,12 @@ pub fn part2(_: &str) -> String {
 }
 
 fn try_move(
-    grid: &mut Vec<Option<Cucumber>>,
+    grid: &mut [Option<Cucumber>],
     old_grid: &mut Vec<Option<Cucumber>>,
     (nx, ny): (usize, usize),
 ) -> bool {
     let mut moved = false;
-    *old_grid = grid.clone();
+    *old_grid = grid.to_owned();
     for y in 0..ny {
         for x in 0..nx {
             let pos = x + y * nx;
@@ -32,7 +32,7 @@ fn try_move(
             }
         }
     }
-    *old_grid = grid.clone();
+    *old_grid = grid.to_owned();
     for y in 0..ny {
         for x in 0..nx {
             let pos = x + y * nx;
