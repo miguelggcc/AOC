@@ -99,7 +99,6 @@ gcafb gcf dcaebfg ecagb gf abcdeg gaef cafbge fdbac fegbdc | fgae cfgab fg bagce
         assert_eq!(part1(INPUT), 26);
     }
     #[test]
-    #[ignore]
     fn ex_part_2() {
         assert_eq!(part2("acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab | cdfeb fcadb cdfeb cdbaf"), 5353);
     }
