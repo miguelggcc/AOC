@@ -1,8 +1,8 @@
 pub fn part1(input: &str) -> u32 {
     let (mut cucumbers, size) = parse(input);
+    let mut copy = cucumbers.clone();
     for step in 1..10_000 {
-        let copy = cucumbers.clone();
-        if !try_move(&mut cucumbers, copy, size) {
+        if !try_move(&mut cucumbers, &mut copy, size) {
             return step;
         }
     }
@@ -15,29 +15,32 @@ pub fn part2(_: &str) -> String {
 
 fn try_move(
     grid: &mut Vec<Option<Cucumber>>,
-    old_grid: Vec<Option<Cucumber>>,
+    old_grid: &mut Vec<Option<Cucumber>>,
     (nx, ny): (usize, usize),
 ) -> bool {
     let mut moved = false;
+    *old_grid = grid.clone();
     for y in 0..ny {
         for x in 0..nx {
-            if old_grid[x + y * nx] == Some(Cucumber::E) {
+            let pos = x + y * nx;
+            if old_grid[pos] == Some(Cucumber::E) {
                 let new_pos = (x + 1) % nx + y * nx;
                 if old_grid[new_pos].is_none() {
                     moved = true;
-                    grid.swap(x + y * nx, new_pos);
+                    grid.swap(pos, new_pos);
                 }
             }
         }
     }
-    let old_grid = grid.clone();
+    *old_grid = grid.clone();
     for y in 0..ny {
         for x in 0..nx {
-            if old_grid[x + y * nx] == Some(Cucumber::S) {
+            let pos = x + y * nx;
+            if old_grid[pos] == Some(Cucumber::S) {
                 let new_pos = x + ((y + 1) % ny) * nx;
                 if old_grid[new_pos].is_none() {
                     moved = true;
-                    grid.swap(x + y * nx, new_pos);
+                    grid.swap(pos, new_pos);
                 }
             }
         }
