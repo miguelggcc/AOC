@@ -85,6 +85,7 @@ fn solve(scanners: Vec<Vec<Point>>, part1: bool) -> Vec<Point> {
                                 if candidates[i] >= 3 {
                                     return Some((r.clone(), t1));
                                 }
+                                break;
                             }
                         }
                         None
@@ -111,7 +112,7 @@ fn solve(scanners: Vec<Vec<Point>>, part1: bool) -> Vec<Point> {
     out
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 enum Rotation {
     NegX,
     NegY,
