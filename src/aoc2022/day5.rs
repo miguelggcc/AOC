@@ -1,40 +1,15 @@
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::alpha1,
-    character::complete::u32,
-    combinator::all_consuming,
+    character::complete::{alpha1, u32},
+    combinator::{all_consuming, map},
     multi::separated_list1,
-    sequence::{delimited, preceded},
+    sequence::{delimited, preceded, tuple},
     Finish, IResult,
 };
 
 pub fn part1(input: &str) -> String {
-    let mut lines = input.lines();
-    let crates_lines: Vec<_> = (&mut lines)
-        .map_while(|line| {
-            all_consuming(parse_line)(line)
-                .finish()
-                .ok()
-                .map(|(_input, l)| l)
-        })
-        .collect();
-
-    let mut crate_columns = vec![vec![]; crates_lines[0].len()];
-    for crates in crates_lines.iter().rev() {
-        for i in 0..crate_columns.len() {
-            if let Some(crate_char) = crates[i] {
-                crate_columns[i].push(crate_char);
-            }
-        }
-    }
-
-    assert!(lines.next().unwrap().is_empty());
-
-    let moves: Vec<Move> = lines
-        .map(|line| all_consuming(parse_move)(line).finish().unwrap().1)
-        .collect();
-
+    let (mut crate_columns, moves) = parse(input);
     moves.iter().for_each(|m| {
         for _ in 0..m.n {
             let c = crate_columns[m.from as usize].pop().unwrap();
@@ -42,55 +17,55 @@ pub fn part1(input: &str) -> String {
         }
     });
     crate_columns
-        .iter()
-        .map(|column| *column.last().unwrap())
-        .collect::<Vec<&str>>()
-        .join("")
+        .into_iter()
+        .map(|c| *c.last().unwrap())
+        .collect::<String>()
 }
 
 pub fn part2(input: &str) -> String {
+    let (mut crate_columns, moves) = parse(input);
+
+    moves.iter().for_each(|m| {
+        let len = &crate_columns[m.from as usize].len();
+        let mut cs: Vec<&str> = crate_columns[m.from as usize]
+            .drain(len - m.n as usize..)
+            .collect();
+        crate_columns[m.to as usize].append(&mut cs);
+    });
+    crate_columns
+        .into_iter()
+        .map(|column| *column.last().unwrap())
+        .collect::<String>()
+}
+
+fn parse(input: &str) -> (Vec<Vec<&str>>, Vec<Move>) {
     let mut lines = input.lines();
     let crates_lines: Vec<_> = (&mut lines)
         .map_while(|line| {
             all_consuming(parse_line)(line)
-                .finish()
                 .ok()
-                .map(|(_input, l)| l)
+                .map(|(_, l)| l)
         })
         .collect();
 
     let mut crate_columns = vec![vec![]; crates_lines[0].len()];
-    for crates in crates_lines.iter().rev() {
+    for crates in crates_lines.into_iter().rev() {
         for i in 0..crate_columns.len() {
             if let Some(crate_char) = crates[i] {
                 crate_columns[i].push(crate_char);
             }
         }
     }
-
     assert!(lines.next().unwrap().is_empty());
 
-    let moves: Vec<Move> = lines
+    let moves = lines
         .map(|line| all_consuming(parse_move)(line).finish().unwrap().1)
         .collect();
-
-    moves.iter().for_each(|m| {
-        let len = &crate_columns[m.from as usize].len();
-        let cs: Vec<&str> = crate_columns[m.from as usize]
-            .drain(len - m.n as usize..)
-            .collect();
-        crate_columns[m.to as usize].extend_from_slice(&cs);
-    });
-    crate_columns
-        .iter()
-        .map(|column| *column.last().unwrap())
-        .collect::<Vec<&str>>()
-        .join("")
+    (crate_columns, moves)
 }
 
 fn parse_line(input: &str) -> IResult<&str, Vec<Option<&str>>> {
-    let (input, result) = separated_list1(tag(" "), parse_crate)(input)?;
-    Ok((input, result))
+    separated_list1(tag(" "), parse_crate)(input)
 }
 
 fn parse_crate(input: &str) -> IResult<&str, Option<&str>> {
@@ -103,21 +78,20 @@ fn parse_crate(input: &str) -> IResult<&str, Option<&str>> {
 }
 
 fn parse_move(input: &str) -> IResult<&str, Move> {
-    let (input, n) = preceded(tag("move "), u32)(input)?;
-    let (input, from) = preceded(tag(" from "), u32)(input)?;
-    let (input, to) = preceded(tag(" to "), u32)(input)?;
-
-    Ok((
-        input,
-        Move {
+    map(
+        tuple((
+            preceded(tag("move "), u32),
+            preceded(tag(" from "), u32),
+            preceded(tag(" to "), u32),
+        )),
+        |(n, f, t)| Move {
             n,
-            from: from - 1,
-            to: to - 1,
+            from: f - 1,
+            to: t - 1,
         },
-    ))
+    )(input)
 }
 
-#[derive(Debug)]
 struct Move {
     n: u32,
     from: u32,
@@ -131,10 +105,10 @@ mod tests {
 
     #[test]
     fn part_1() {
-        let input = "    [D]
-[N] [C]
+        let input = "    [D]    
+[N] [C]    
 [Z] [M] [P]
- 1   2   3
+ 1   2   3 
 
 move 1 from 2 to 1
 move 3 from 1 to 3

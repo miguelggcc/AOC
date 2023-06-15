@@ -49,8 +49,8 @@ macro_rules! year {
 pub fn parse_args_day() -> Result<Option<(u32, usize)>, pico_args::Error> {
     let mut pargs = pico_args::Arguments::from_env();
 
-    if pargs.contains("--all"){
-        return Ok(None)
+    if pargs.contains("--all") {
+        return Ok(None);
     }
     let day = pargs.free_from_str()?;
     let iterations = pargs.value_from_str("--i").unwrap_or(1);
@@ -68,7 +68,8 @@ pub fn build_new_year(year: u32) {
     fs::create_dir_all(format!("./inputs/aoc{}", year)).expect("could not create folder");
 
     for day in 1..=25 {
-        fs::File::create(format!("./inputs/aoc{}/input_day{}.txt", year, day)).expect("could not create input file");
+        fs::File::create(format!("./inputs/aoc{}/input_day{}.txt", year, day))
+            .expect("could not create input file");
         let day_path = format!("{}/day{}.rs", code_path_str, day);
         let path = Path::new(&day_path);
         if !path.exists() {

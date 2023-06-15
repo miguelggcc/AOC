@@ -23,7 +23,7 @@ fn get_energy<const R: usize>(input: &str) -> u32 {
             .split('#')
             .filter(|s| !s.is_empty())
             .enumerate()
-            .for_each(|(i, a)| rooms[j + i * l] = a.chars().next().unwrap() as u8 - b'A' + 1)
+            .for_each(|(i, a)| rooms[j + i * l] = a.bytes().next().unwrap() - b'A' + 1)
     }
     let mut new_states = vec![];
     let mut heap: BinaryHeap<State<R>> = BinaryHeap::from([State::new(rooms)]);
