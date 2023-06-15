@@ -8,8 +8,9 @@ macro_rules! year {
         paste! {
             pub fn run(d: u32){
                 match (d) {
-                    #(D => {let input = std::fs::read_to_string(concat!["inputs/aoc", stringify![$year], "/input_day", stringify![D], ".txt"])
-                                    .expect("can't read input file");
+                    #(D => {let input = std::fs::read_to_string(
+                        concat!["inputs/aoc", stringify![$year], "/input_day", stringify![D], ".txt"]
+                    ).expect("can't read input file");
                                     println!("Day {}",D);
                                     let time = Instant::now();
                                     let p1 = [<aoc $year >]::[<day D>]::part1(&input);
@@ -22,36 +23,52 @@ macro_rules! year {
                     day => panic!("there is no day {day}"),
                 }
             }
+            pub fn run_all(){
+                #(let input~D = std::fs::read_to_string(
+                    concat!["inputs/aoc", stringify![$year], "/input_day", stringify![D], ".txt"]
+                ).expect("can't read input file");)*
+            let time = Instant::now();
+            #([<aoc $year >]::[<day D>]::part1(&input~D);
+            [<aoc $year >]::[<day D>]::part2(&input~D);)*
+            println!("Whole year {} took {:?}", stringify![$year], time.elapsed());
+            }
         }
         });
         fn main() {
-            let (day, iterations) = aoc::parse_args_day().unwrap_or_else(|e| panic!("Error {e}"));
+            if let Some((day, iterations)) = aoc::parse_args_day().unwrap_or_else(|e| panic!("Error {e}")){
             for _ in 0..iterations {
                 run(day);
             }
+        } else{
+            run_all();
+        }
         }
     }
 }
 
-pub fn parse_args_day() -> Result<(u32, usize), pico_args::Error> {
+pub fn parse_args_day() -> Result<Option<(u32, usize)>, pico_args::Error> {
     let mut pargs = pico_args::Arguments::from_env();
 
-    let day = pargs.value_from_str("--d")?;
+    if pargs.contains("--all"){
+        return Ok(None)
+    }
+    let day = pargs.free_from_str()?;
     let iterations = pargs.value_from_str("--i").unwrap_or(1);
-    // It's up to the caller what to do with the remaining arguments.
     let remaining = pargs.finish();
     if !remaining.is_empty() {
         eprintln!("Warning: unused arguments left: {:?}.", remaining);
     }
 
-    Ok((day, iterations))
+    Ok(Some((day, iterations)))
 }
 
 pub fn build_new_year(year: u32) {
     let code_path_str = format!("./src/aoc{}", year);
     fs::create_dir_all(code_path_str.clone()).expect("could not create folder");
     fs::create_dir_all(format!("./inputs/aoc{}", year)).expect("could not create folder");
+
     for day in 1..=25 {
+        fs::File::create(format!("./inputs/aoc{}/input_day{}.txt", year, day)).expect("could not create input file");
         let day_path = format!("{}/day{}.rs", code_path_str, day);
         let path = Path::new(&day_path);
         if !path.exists() {
