@@ -41,11 +41,7 @@ pub fn part2(input: &str) -> String {
 fn parse(input: &str) -> (Vec<Vec<&str>>, Vec<Move>) {
     let mut lines = input.lines();
     let crates_lines: Vec<_> = (&mut lines)
-        .map_while(|line| {
-            all_consuming(parse_line)(line)
-                .ok()
-                .map(|(_, l)| l)
-        })
+        .map_while(|line| all_consuming(parse_line)(line).ok().map(|(_, l)| l))
         .collect();
 
     let mut crate_columns = vec![vec![]; crates_lines[0].len()];
