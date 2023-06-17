@@ -7,7 +7,7 @@ pub fn part1(input: &str) -> u32 {
         .collect();
     p[1] = 12;
     p[2] = 2;
-    
+
     execute(p)
 }
 
