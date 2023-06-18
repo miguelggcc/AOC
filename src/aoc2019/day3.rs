@@ -4,7 +4,6 @@ pub fn part1(input: &str) -> u32 {
     path1
         .into_iter()
         .flat_map(|(p1, _)| path2.iter().filter_map(move |(p2, _)| p1.intersection(p2)))
-        .map(|(x, y)| x.unsigned_abs() + y.unsigned_abs())
         .filter(|&d| d != 0)
         .min()
         .unwrap()
@@ -18,9 +17,8 @@ pub fn part2(input: &str) -> u32 {
         .flat_map(|(p1, d1)| {
             path2
                 .iter()
-                .filter_map(move |(p2, d2)| p1.intersection2(p2).zip(Some(d1 + d2)))
+                .filter_map(move |(p2, d2)| p1.intersection2(p2).map(|d| d + d1 + d2))
         })
-        .map(|(d, extra_d)| d + extra_d)
         .filter(|&d| d != 0)
         .min()
         .unwrap()
@@ -34,13 +32,13 @@ enum Line {
 }
 
 impl Line {
-    fn intersection(&self, other: &Self) -> Option<Point> {
+    fn intersection(&self, other: &Self) -> Option<u32> {
         match (self, other) {
             (Self::V((v0, v1)), Self::H((h0, h1))) | (Self::H((h0, h1)), Self::V((v0, v1)))
                 if (h0.0.min(h1.0)..=h1.0.max(h0.0)).contains(&v0.0)
                     && (v0.1.min(v1.1)..=v1.1.max(v0.1)).contains(&h0.1) =>
             {
-                Some((v1.0, h1.1))
+                Some(v1.0.unsigned_abs() + h1.1.unsigned_abs())
             }
             _ => None,
         }
