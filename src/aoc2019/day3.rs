@@ -3,7 +3,11 @@ pub fn part1(input: &str) -> u32 {
     let (path1, path2) = (parse_line(i1), parse_line(i2));
     path1
         .into_iter()
-        .flat_map(|(p1, _)| path2.iter().filter_map(move |(p2, _)| p1.intersection(p2)))
+        .flat_map(|(p1, _)| {
+            path2
+                .iter()
+                .filter_map(move |(p2, _)| p1.intersection(p2, false))
+        })
         .filter(|&d| d != 0)
         .min()
         .unwrap()
@@ -17,7 +21,7 @@ pub fn part2(input: &str) -> u32 {
         .flat_map(|(p1, d1)| {
             path2
                 .iter()
-                .filter_map(move |(p2, d2)| p1.intersection2(p2).map(|d| d + d1 + d2))
+                .filter_map(move |(p2, d2)| p1.intersection(p2, true).map(|d| d + d1 + d2))
         })
         .filter(|&d| d != 0)
         .min()
@@ -32,24 +36,15 @@ enum Line {
 }
 
 impl Line {
-    fn intersection(&self, other: &Self) -> Option<u32> {
+    fn intersection(&self, other: &Self, part2: bool) -> Option<u32> {
         match (self, other) {
             (Self::V((v0, v1)), Self::H((h0, h1))) | (Self::H((h0, h1)), Self::V((v0, v1)))
                 if (h0.0.min(h1.0)..=h1.0.max(h0.0)).contains(&v0.0)
                     && (v0.1.min(v1.1)..=v1.1.max(v0.1)).contains(&h0.1) =>
             {
-                Some(v1.0.unsigned_abs() + h1.1.unsigned_abs())
-            }
-            _ => None,
-        }
-    }
-    fn intersection2(&self, other: &Self) -> Option<u32> {
-        match (self, other) {
-            (Self::V((v0, v1)), Self::H((h0, h1))) | (Self::H((h0, h1)), Self::V((v0, v1)))
-                if (h0.0.min(h1.0)..=h1.0.max(h0.0)).contains(&v0.0)
-                    && (v0.1.min(v1.1)..=v1.1.max(v0.1)).contains(&h0.1) =>
-            {
-                Some(v1.0.abs_diff(h0.0) + h1.1.abs_diff(v0.1))
+                Some(
+                    v1.0.abs_diff(h0.0 * i32::from(part2)) + h1.1.abs_diff(v0.1 * i32::from(part2)),
+                )
             }
             _ => None,
         }
