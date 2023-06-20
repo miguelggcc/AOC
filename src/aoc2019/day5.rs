@@ -41,41 +41,41 @@ fn execute(mut p: Vec<i32>, input: i32) -> Vec<i32> {
 
         i += match opcode {
             1 => {
-                p[o] = p[par0 as usize] + p[par1 as usize];
+                p[o] = p[par0] + p[par1];
                 4
             }
             2 => {
-                p[o] = p[par0 as usize] * p[par1 as usize];
+                p[o] = p[par0] * p[par1];
                 4
             }
             3 => {
-                p[par0 as usize] = input;
+                p[par0] = input;
                 2
             }
             4 => {
-                output.push(p[par0 as usize]);
+                output.push(p[par0]);
                 2
             }
             5 => {
-                if p[par0 as usize] != 0 {
-                    p[par1 as usize] as usize - i
+                if p[par0] != 0 {
+                    p[par1] as usize - i
                 } else {
                     3
                 }
             }
             6 => {
-                if p[par0 as usize] == 0 {
-                    p[par1 as usize] as usize - i
+                if p[par0] == 0 {
+                    p[par1] as usize - i
                 } else {
                     3
                 }
             }
             7 => {
-                p[o] = i32::from(p[par0 as usize] < p[par1 as usize]);
+                p[o] = i32::from(p[par0] < p[par1]);
                 4
             }
             8 => {
-                p[o] = i32::from(p[par0 as usize] == p[par1 as usize]);
+                p[o] = i32::from(p[par0] == p[par1]);
                 4
             }
             99 => return output,
