@@ -1,15 +1,18 @@
+const W: usize = 25;
+const H: usize = 6;
+
 pub fn part1(input: &str) -> u32 {
     let all: Vec<_> = input.bytes().map(|b| b - b'0').collect();
-    let size = 25 * 6;
+    let size = W * H;
     let i = all
         .chunks(size)
         .enumerate()
-        .map(|(i, layer)| (i, layer.into_iter().filter(|&&p| p == 0).count()))
-        .min_by_key(|&(_, m)| m)
+        .map(|(i, layer)| (i, layer.iter().filter(|&&p| p == 0).count()))
+        .min_by(|a, b| a.1.cmp(&b.1))
         .unwrap()
         .0;
     all[i * size..(i + 1) * size]
-        .into_iter()
+        .iter()
         .filter(|&&p| p > 0)
         .fold([0, 0], |mut acc, &p| {
             acc[p as usize - 1] += 1;
@@ -21,7 +24,7 @@ pub fn part1(input: &str) -> u32 {
 
 pub fn part2(input: &str) -> String {
     let all: Vec<_> = input.bytes().map(|b| b - b'0').collect();
-    let (width, height) = if all.len() > 16 { (25, 6) } else { (2, 2) };
+    let (width, height) = if all.len() > 16 { (W, H) } else { (2, 2) };
     let size = width * height;
     let mut s = String::with_capacity(size);
     for y in 0..height {
@@ -45,6 +48,6 @@ mod day8 {
 
     #[test]
     fn part_2() {
-        assert_eq!(part2("0222112222120000"), "#.\n.#\n");
+        assert_eq!(part2("0222112222120000"), ".#\n#.\n");
     }
 }
