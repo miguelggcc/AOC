@@ -80,16 +80,16 @@ impl IntCode {
                     }
                 }
                 Instruction::Output(o) => self.output.push(self.p[o]),
-                Instruction::JumpIfTrue((p1,p2)) if self.p[p1] != 0 => {
+                Instruction::JumpIfTrue((p1, p2)) if self.p[p1] != 0 => {
                     self.i = self.p[p2] as usize
                 }
-                Instruction::JumpIfFalse((p1,p2)) if self.p[p1] == 0 => {
+                Instruction::JumpIfFalse((p1, p2)) if self.p[p1] == 0 => {
                     self.i = self.p[p2] as usize;
                 }
-                Instruction::LessThan((p1,p2), o) => {
+                Instruction::LessThan((p1, p2), o) => {
                     self.p[o] = isize::from(self.p[p1] < self.p[p2])
                 }
-                Instruction::Equal((p1,p2), o) => {
+                Instruction::Equal((p1, p2), o) => {
                     self.p[o] = isize::from(self.p[p1] == self.p[p2])
                 }
                 Instruction::Halt => {
