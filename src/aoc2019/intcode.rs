@@ -39,7 +39,7 @@ impl IntCode {
             1 => Instruction::Add(self.get_parameters(pmode), self.next()),
             2 => Instruction::Mul(self.get_parameters(pmode), self.next()),
             3 => Instruction::Input(self.next()),
-            4 => Instruction::Output(self.get_one_parameter(pmode, 1)),
+            4 => Instruction::Output(self.get_parameter(pmode, 1)),
             5 => Instruction::JumpIfTrue(self.get_parameters(pmode)),
             6 => Instruction::JumpIfFalse(self.get_parameters(pmode)),
             7 => Instruction::LessThan(self.get_parameters(pmode), self.next()),
@@ -53,7 +53,7 @@ impl IntCode {
         self.i += 1;
         self.p[self.i - 1] as usize
     }
-    fn get_one_parameter(&mut self, pmode: usize, d: usize) -> usize {
+    fn get_parameter(&mut self, pmode: usize, d: usize) -> usize {
         self.i += 1;
         if (pmode / d) % 10 == 1 {
             self.i - 1
@@ -63,10 +63,7 @@ impl IntCode {
     }
 
     fn get_parameters(&mut self, pmode: usize) -> Parameters {
-        [
-            self.get_one_parameter(pmode, 1),
-            self.get_one_parameter(pmode, 10),
-        ]
+        [self.get_parameter(pmode, 1), self.get_parameter(pmode, 10)]
     }
 
     pub fn execute(&mut self, mut n: Vec<isize>) {
