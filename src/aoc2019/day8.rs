@@ -1,9 +1,41 @@
-pub fn part1(_input: &str) -> String {
-    String::from("Not implemented")
+pub fn part1(input: &str) -> u32 {
+    let all: Vec<_> = input.bytes().map(|b| b - b'0').collect();
+    let size = 25 * 6;
+    let i = all
+        .chunks(size)
+        .enumerate()
+        .map(|(i, layer)| (i, layer.into_iter().filter(|&&p| p == 0).count()))
+        .min_by_key(|&(_, m)| m)
+        .unwrap()
+        .0;
+    all[i * size..(i + 1) * size]
+        .into_iter()
+        .filter(|&&p| p > 0)
+        .fold([0, 0], |mut acc, &p| {
+            acc[p as usize - 1] += 1;
+            acc
+        })
+        .iter()
+        .product()
 }
 
-pub fn part2(_input: &str) -> String {
-    String::from("Not implemented")
+pub fn part2(input: &str) -> String {
+    let all: Vec<_> = input.bytes().map(|b| b - b'0').collect();
+    let (width, height) = if all.len() > 16 { (25, 6) } else { (2, 2) };
+    let size = width * height;
+    let mut s = String::with_capacity(size);
+    for y in 0..height {
+        for x in 0..width {
+            let i = x + y * width;
+            if *all.iter().skip(i).step_by(size).find(|&&p| p < 2).unwrap() == 0 {
+                s.push('.');
+            } else {
+                s.push('#');
+            }
+        }
+        s.push('\n');
+    }
+    s
 }
 
 #[cfg(test)]
@@ -11,16 +43,8 @@ mod day8 {
 
     use super::*;
 
-    const INPUT: &'static str = "";
-
     #[test]
-    #[ignore]
-    fn part_1() {
-        assert_eq!(part1(INPUT), "");
-    }
-    #[test]
-    #[ignore]
     fn part_2() {
-        assert_eq!(part2(INPUT), "");
+        assert_eq!(part2("0222112222120000"), "#.\n.#\n");
     }
 }
