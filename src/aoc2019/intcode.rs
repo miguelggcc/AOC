@@ -6,15 +6,16 @@ pub struct IntCode {
     pub halted: bool,
 }
 
+type Parameters = [usize; 2];
 enum Instruction {
-    Add([usize; 2], usize),
-    Mul([usize; 2], usize),
+    Add(Parameters, usize),
+    Mul(Parameters, usize),
     Input(usize),
     Output(usize),
-    JumpIfTrue([usize; 2]),
-    JumpIfFalse([usize; 2]),
-    LessThan([usize; 2], usize),
-    Equal([usize; 2], usize),
+    JumpIfTrue(Parameters),
+    JumpIfFalse(Parameters),
+    LessThan(Parameters, usize),
+    Equal(Parameters, usize),
     Halt,
 }
 
@@ -61,7 +62,7 @@ impl IntCode {
         }
     }
 
-    fn get_parameters(&mut self, pmode: usize) -> [usize; 2] {
+    fn get_parameters(&mut self, pmode: usize) -> Parameters {
         [
             self.get_one_parameter(pmode, 1),
             self.get_one_parameter(pmode, 10),
