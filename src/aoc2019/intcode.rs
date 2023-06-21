@@ -6,7 +6,7 @@ pub struct IntCode {
     pub halted: bool,
 }
 
-type Parameters = [usize; 2];
+type Parameters = (usize, usize);
 enum Instruction {
     Add(Parameters, usize),
     Mul(Parameters, usize),
@@ -63,14 +63,14 @@ impl IntCode {
     }
 
     fn get_parameters(&mut self, pmode: usize) -> Parameters {
-        [self.get_parameter(pmode, 1), self.get_parameter(pmode, 10)]
+        (self.get_parameter(pmode, 1), self.get_parameter(pmode, 10))
     }
 
     pub fn execute(&mut self, mut n: Vec<isize>) {
         while self.i < self.p.len() && !self.halted {
             match self.get_instruction() {
-                Instruction::Add([p1, p2], o) => self.p[o] = self.p[p1] + self.p[p2],
-                Instruction::Mul([p1, p2], o) => self.p[o] = self.p[p1] * self.p[p2],
+                Instruction::Add((p1, p2), o) => self.p[o] = self.p[p1] + self.p[p2],
+                Instruction::Mul((p1, p2), o) => self.p[o] = self.p[p1] * self.p[p2],
                 Instruction::Input(o) => {
                     if let Some(last) = n.pop() {
                         self.p[o] = last;
@@ -80,16 +80,16 @@ impl IntCode {
                     }
                 }
                 Instruction::Output(o) => self.output.push(self.p[o]),
-                Instruction::JumpIfTrue([p1, p2]) if self.p[p1] != 0 => {
+                Instruction::JumpIfTrue((p1,p2)) if self.p[p1] != 0 => {
                     self.i = self.p[p2] as usize
                 }
-                Instruction::JumpIfFalse([p1, p2]) if self.p[p1] == 0 => {
+                Instruction::JumpIfFalse((p1,p2)) if self.p[p1] == 0 => {
                     self.i = self.p[p2] as usize;
                 }
-                Instruction::LessThan([p1, p2], o) => {
+                Instruction::LessThan((p1,p2), o) => {
                     self.p[o] = isize::from(self.p[p1] < self.p[p2])
                 }
-                Instruction::Equal([p1, p2], o) => {
+                Instruction::Equal((p1,p2), o) => {
                     self.p[o] = isize::from(self.p[p1] == self.p[p2])
                 }
                 Instruction::Halt => {
