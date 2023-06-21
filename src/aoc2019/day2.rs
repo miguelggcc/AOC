@@ -1,5 +1,5 @@
-use itertools::*;
 use super::intcode::IntCode;
+use itertools::*;
 
 pub fn part1(input: &str) -> u32 {
     let mut computer = IntCode::new(input);
