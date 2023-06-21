@@ -9,7 +9,7 @@ pub fn part1(input: &str) -> u32 {
             n.into_iter().fold(0, |acc, d| {
                 let mut copy = intcode.clone();
                 copy.execute(vec![acc, d]);
-                copy.output.unwrap()
+                copy.output.pop().unwrap()
             }) as u32
         })
         .max()
@@ -21,17 +21,17 @@ pub fn part2(input: &str) -> u32 {
     let ics = [ic.clone(), ic.clone(), ic.clone(), ic.clone(), ic];
     (5..10)
         .permutations(5)
-        .map(|n| {
+        .map(|vn| {
             let mut out = 0;
             let mut amps = ics.clone();
             amps.iter_mut()
-                .enumerate()
-                .for_each(|(i, a)| a.execute(vec![n[i]]));
-            let mut i = 0;
-            while !amps[4].is_halted {
-                amps[i].execute(vec![out]);
-                out = amps[i].output.unwrap();
-                i = (i + 1) % 5;
+                .zip(&vn)
+                .for_each(|(a, &n)| a.execute(vec![n]));
+            while !amps[4].halted {
+                for amp in amps.iter_mut() {
+                    amp.execute(vec![out]);
+                    out = amp.output.pop().unwrap();
+                }
             }
             out as u32
         })
@@ -42,7 +42,7 @@ pub fn part2(input: &str) -> u32 {
 #[cfg(test)]
 mod day7 {
 
-    use super::*;        
+    use super::*;
 
     #[test]
     fn part_1() {
@@ -51,7 +51,8 @@ mod day7 {
     }
     #[test]
     fn part_2() {
-        let input = "3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5";
+        let input =
+            "3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5";
         assert_eq!(part2(input), 139629729);
     }
 }
