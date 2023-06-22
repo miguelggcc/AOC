@@ -7,16 +7,15 @@ pub struct IntCode {
     pub halted: bool,
 }
 
-type Parameters = (usize, usize);
 enum Instruction {
-    Add(Parameters, usize),
-    Mul(Parameters, usize),
+    Add((usize, usize, usize)),
+    Mul((usize, usize, usize)),
     Input(usize),
     Output(usize),
-    JumpIfTrue(Parameters),
-    JumpIfFalse(Parameters),
-    LessThan(Parameters, usize),
-    Equal(Parameters, usize),
+    JumpIfTrue((usize, usize)),
+    JumpIfFalse((usize, usize)),
+    LessThan((usize, usize, usize)),
+    Equal((usize, usize, usize)),
     RelativeOffset(usize),
     Halt,
 }
@@ -39,15 +38,15 @@ impl IntCode {
         let opcode = self.next();
         let pmode = opcode / 100;
         match opcode % 100 {
-            1 => Instruction::Add(self.get_parameters(pmode), self.get_parameter(pmode, 100)),
-            2 => Instruction::Mul(self.get_parameters(pmode), self.get_parameter(pmode, 100)),
-            3 => Instruction::Input(self.get_parameter(pmode, 1)),
-            4 => Instruction::Output(self.get_parameter(pmode, 1)),
-            5 => Instruction::JumpIfTrue(self.get_parameters(pmode)),
-            6 => Instruction::JumpIfFalse(self.get_parameters(pmode)),
-            7 => Instruction::LessThan(self.get_parameters(pmode), self.get_parameter(pmode, 100)),
-            8 => Instruction::Equal(self.get_parameters(pmode), self.get_parameter(pmode, 100)),
-            9 => Instruction::RelativeOffset(self.get_parameter(pmode, 1)),
+            1 => Instruction::Add(self.get_3parameters(pmode)),
+            2 => Instruction::Mul(self.get_3parameters(pmode)),
+            3 => Instruction::Input(self.get_1parameter(pmode)),
+            4 => Instruction::Output(self.get_1parameter(pmode)),
+            5 => Instruction::JumpIfTrue(self.get_2parameters(pmode)),
+            6 => Instruction::JumpIfFalse(self.get_2parameters(pmode)),
+            7 => Instruction::LessThan(self.get_3parameters(pmode)),
+            8 => Instruction::Equal(self.get_3parameters(pmode)),
+            9 => Instruction::RelativeOffset(self.get_1parameter(pmode)),
             99 => Instruction::Halt,
             e => panic!("uknown instruction {e}"),
         }
@@ -66,8 +65,20 @@ impl IntCode {
         }
     }
 
-    fn get_parameters(&mut self, pmode: usize) -> Parameters {
+    fn get_1parameter(&mut self, pmode: usize) -> usize {
+        self.get_parameter(pmode, 1)
+    }
+
+    fn get_2parameters(&mut self, pmode: usize) -> (usize, usize) {
         (self.get_parameter(pmode, 1), self.get_parameter(pmode, 10))
+    }
+
+    fn get_3parameters(&mut self, pmode: usize) -> (usize, usize, usize) {
+        (
+            self.get_parameter(pmode, 1),
+            self.get_parameter(pmode, 10),
+            self.get_parameter(pmode, 100),
+        )
     }
     fn p(&self, i: usize) -> isize {
         *self.p.get(i).unwrap_or(&0)
@@ -82,8 +93,8 @@ impl IntCode {
     pub fn execute(&mut self, mut n: Vec<isize>) {
         while self.i < self.p.len() && !self.halted {
             match self.get_instruction() {
-                Instruction::Add((p1, p2), o) => *self.pmut(o) = self.p(p1) + self.p(p2),
-                Instruction::Mul((p1, p2), o) => *self.pmut(o) = self.p(p1) * self.p(p2),
+                Instruction::Add((p1, p2, o)) => *self.pmut(o) = self.p(p1) + self.p(p2),
+                Instruction::Mul((p1, p2, o)) => *self.pmut(o) = self.p(p1) * self.p(p2),
                 Instruction::Input(o) => {
                     if let Some(last) = n.pop() {
                         *self.pmut(o) = last;
@@ -99,10 +110,10 @@ impl IntCode {
                 Instruction::JumpIfFalse((p1, p2)) if self.p(p1) == 0 => {
                     self.i = self.p(p2) as usize;
                 }
-                Instruction::LessThan((p1, p2), o) => {
+                Instruction::LessThan((p1, p2, o)) => {
                     *self.pmut(o) = isize::from(self.p(p1) < self.p(p2))
                 }
-                Instruction::Equal((p1, p2), o) => {
+                Instruction::Equal((p1, p2, o)) => {
                     *self.pmut(o) = isize::from(self.p(p1) == self.p(p2))
                 }
                 Instruction::RelativeOffset(p1) => self.ri += self.p(p1),
