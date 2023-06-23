@@ -18,7 +18,7 @@ pub fn part1(input: &str) -> u32 {
 pub fn part2(input: &str) -> u32 {
     let (mut grid, size) = parse(input);
     let los = get_los(size);
-    let pos = (1..size.0)
+    let pos0 = (1..size.0)
         .cartesian_product(1..size.1)
         .filter(|&(x, y)| grid[(x + y * size.0) as usize])
         .map(|pos| {
@@ -29,22 +29,20 @@ pub fn part2(input: &str) -> u32 {
                 pos,
             )
         })
-        .max_by_key(|&(t, _)| t)
+        .max_by(|&a, &b| a.0.cmp(&b.0))
         .unwrap()
         .1;
 
-    let mut count = 0;
-
-    for l in los.iter() {
-        if let Some((x_as, y_as)) = find_asteroid(&grid, *l, pos, size) {
-            count += 1;
-            if count == 200 {
-                return (x_as * 100 + y_as) as u32;
-            }
-            grid[(x_as + y_as * size.0) as usize] = false;
-        }
-    }
-    panic!("no 200th asteroid")
+    los.iter()
+        .cycle()
+        .filter_map(|&l| {
+            find_asteroid(&grid, l, pos0, size).and_then(|(x_as, y_as)| {
+                grid[(x_as + y_as * size.0) as usize] = false;
+                Some(x_as * 100 + y_as)
+            })
+        })
+        .nth(199)
+        .expect("less than 200 asteroids") as u32
 }
 
 fn get_los((nx, ny): Point) -> Vec<Point> {
@@ -52,15 +50,15 @@ fn get_los((nx, ny): Point) -> Vec<Point> {
         .cartesian_product((1..ny).rev())
         .filter(|&(x, y)| (gcd(x, y) == 1))
         .collect();
-    quadrant.sort_by_key(|&(x, y)| ((x as f32).atan2(y as f32) * 1000000.0) as i32);
+    quadrant.sort_by_key(|&(x, y)| ((x as f32).atan2(y as f32) * 100000.0) as i32);
     let mut los: Vec<_> = vec![(0, -1)];
-    los.extend(quadrant.iter().map(move |&(x, y)| (x, -y)));
+    los.extend(quadrant.iter().map(|&(x, y)| (x, -y)));
     los.push((1, 0));
     los.extend(quadrant.iter().copied().rev());
     los.push((0, 1));
-    los.extend(quadrant.iter().map(move |&(x, y)| (-x, y)));
+    los.extend(quadrant.iter().map(|&(x, y)| (-x, y)));
     los.push((-1, 0));
-    los.extend(quadrant.iter().rev().map(move |&(x, y)| (-x, -y)));
+    los.extend(quadrant.iter().rev().map(|&(x, y)| (-x, -y)));
     los
 }
 
