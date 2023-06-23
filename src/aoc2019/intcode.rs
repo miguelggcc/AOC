@@ -3,6 +3,7 @@ pub struct IntCode {
     pub p: Vec<isize>,
     i: usize,
     ri: isize,
+    pub input: Vec<isize>,
     pub output: Vec<isize>,
     pub halted: bool,
 }
@@ -30,6 +31,7 @@ impl IntCode {
             p,
             i: 0,
             ri: 0,
+            input: vec![],
             output: vec![],
             halted: false,
         }
@@ -89,14 +91,23 @@ impl IntCode {
         }
         self.p.get_mut(i).unwrap()
     }
+    pub fn execute_input(&mut self, n: isize) {
+        self.input.push(n);
+        self.execute();
+    }
 
-    pub fn execute(&mut self, mut n: Vec<isize>) {
+    pub fn execute_inputs(&mut self, mut n: Vec<isize>) {
+        self.input.append(&mut n);
+        self.execute();
+    }
+
+    pub fn execute(&mut self) {
         while self.i < self.p.len() && !self.halted {
             match self.get_instruction() {
                 Instruction::Add((p1, p2, o)) => *self.pmut(o) = self.p(p1) + self.p(p2),
                 Instruction::Mul((p1, p2, o)) => *self.pmut(o) = self.p(p1) * self.p(p2),
                 Instruction::Input(o) => {
-                    if let Some(last) = n.pop() {
+                    if let Some(last) = self.input.pop() {
                         *self.pmut(o) = last;
                     } else {
                         self.i -= 2;

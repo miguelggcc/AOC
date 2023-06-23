@@ -20,7 +20,7 @@ pub fn part2(input: &str) -> String {
         pos: (0, 0),
         dir: (0, 1),
     };
-    
+
     robot.execute_program(computer, &mut map);
 
     let (xmin, xmax, ymin, ymax) = map.iter().fold(
@@ -62,7 +62,7 @@ impl Robot {
     }
     fn execute_program(&mut self, mut computer: IntCode, map: &mut HashMap<(i8, i8), isize>) {
         while !computer.halted {
-            computer.execute(vec![*map.get(&self.pos).unwrap_or(&0)]);
+            computer.execute_input(*map.get(&self.pos).unwrap_or(&0));
 
             if computer.output.pop().unwrap() == 0 {
                 self.rotate_ccw();

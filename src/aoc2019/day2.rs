@@ -6,7 +6,7 @@ pub fn part1(input: &str) -> u32 {
     computer.p[1] = 12;
     computer.p[2] = 2;
 
-    computer.execute(vec![]);
+    computer.execute();
     computer.p[0] as u32
 }
 
@@ -20,7 +20,7 @@ pub fn part2(input: &str) -> u32 {
             let mut copy = computer.clone();
             copy.p[1] = noun;
             copy.p[2] = verb;
-            copy.execute(vec![]);
+            copy.execute();
             copy.p[0] == output
         })
         .expect("noun and verb not found");
