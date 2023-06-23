@@ -20,7 +20,9 @@ pub fn part2(input: &str) -> String {
         pos: (0, 0),
         dir: (0, 1),
     };
+    
     robot.execute_program(computer, &mut map);
+
     let (xmin, xmax, ymin, ymax) = map.iter().fold(
         (i8::MAX, i8::MIN, i8::MAX, i8::MIN),
         |(xmin, xmax, ymin, ymax), (p, _)| {
