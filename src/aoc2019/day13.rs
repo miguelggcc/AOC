@@ -1,26 +1,46 @@
-pub fn part1(_input: &str) -> String {
-    String::from("Not implemented")
+use super::intcode::IntCode;
+
+pub fn part1(input: &str) -> usize {
+    let mut computer = IntCode::new(input);
+    computer.execute();
+
+    computer
+        .output
+        .into_iter()
+        .skip(2)
+        .step_by(3)
+        .filter(|&t| t == 2)
+        .count()
 }
 
-pub fn part2(_input: &str) -> String {
-    String::from("Not implemented")
-}
+pub fn part2(input: &str) -> u32 {
+    let mut computer = IntCode::new(input);
+    computer.p[0] = 2;
+    computer.execute();
 
-#[cfg(test)]
-mod day13 {
+    let (mut ballx, mut padx) = (0, 0);
+    computer.output.chunks(3).for_each(|obj| {
+        if obj[2] == 4 {
+            ballx = obj[0];
+        }
+        if obj[2] == 3 {
+            padx = obj[0];
+        }
+    });
 
-    use super::*;
+    while !computer.halted {
+        let joystick = (ballx - padx).signum();
 
-    const INPUT: &'static str = "";
+        computer.output.clear();
+        computer.execute_input(joystick);
 
-    #[test]
-    #[ignore]
-    fn part_1() {
-        assert_eq!(part1(INPUT), "");
+        ballx = computer
+            .output
+            .chunks(3)
+            .find(|obj| obj[2] == 4)
+            .unwrap_or(&[0, 0, 0])[0];
+
+        padx += joystick;
     }
-    #[test]
-    #[ignore]
-    fn part_2() {
-        assert_eq!(part2(INPUT), "");
-    }
+    computer.output[computer.output.iter().position(|&o| o == -1).unwrap() + 2] as u32
 }
