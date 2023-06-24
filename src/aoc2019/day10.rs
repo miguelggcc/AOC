@@ -36,9 +36,9 @@ pub fn part2(input: &str) -> u32 {
     los.iter()
         .cycle()
         .filter_map(|&l| {
-            find_asteroid(&grid, l, pos0, size).and_then(|(x_as, y_as)| {
+            find_asteroid(&grid, l, pos0, size).map(|(x_as, y_as)| {
                 grid[(x_as + y_as * size.0) as usize] = false;
-                Some(x_as * 100 + y_as)
+                x_as * 100 + y_as
             })
         })
         .nth(199)

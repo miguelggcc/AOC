@@ -10,15 +10,18 @@ use nom::{
 pub fn part1(input: &str) -> i32 {
     let mut coords = parse(input).unwrap().1;
     for _ in 0..1000 {
-        for i in 0..3{
-            calculate(&mut coords, i);
+        for i in 0..3 {
+            gravity(&mut coords, i);
         }
     }
     coords
         .into_iter()
         .map(|coord| {
-            coord.iter().map(|(c, _)| c.abs()).sum::<i32>()
-                * coord.iter().map(|(_, v)| v.abs()).sum::<i32>()
+            coord
+                .into_iter()
+                .fold([0, 0], |acc, (c, v)| [acc[0] + c.abs(), acc[1] + v.abs()])
+                .iter()
+                .product::<i32>()
         })
         .sum::<i32>()
 }
@@ -29,8 +32,9 @@ pub fn part2(input: &str) -> usize {
     [0, 1, 2]
         .map(|i| {
             (1..)
-                .find(|_| { calculate(&mut coords, i);
-                coords == first
+                .find(|_| {
+                    gravity(&mut coords, i);
+                    coords == first
                 })
                 .unwrap()
         })
@@ -38,29 +42,20 @@ pub fn part2(input: &str) -> usize {
         .fold(1, |acc, &r| acc * r / gcd(acc, r))
 }
 
-fn calculate(coords: &mut Vec<[(i32,i32);3]>, i:usize){
+#[inline(always)]
+fn gravity(coords: &mut Vec<[(i32, i32); 3]>, i: usize) {
     for spl in 0..coords.len() {
         let (left, right) = coords.split_at_mut(spl);
-        let coord2 = right.first_mut().unwrap();
+        let (c2, v2) = right.first_mut().unwrap().get_mut(i).unwrap();
+
         for coord1 in left {
-            let ((c1, v1), (c2, v2)) =
-                (coord1.get_mut(i).unwrap(), coord2.get_mut(i).unwrap());
-            match c1.cmp(&c2) {
-                std::cmp::Ordering::Greater => {
-                    *v1 -= 1;
-                    *v2 += 1
-                }
-                std::cmp::Ordering::Less => {
-                    *v1 += 1;
-                    *v2 -= 1
-                }
-                _ => (),
-            }
+            let (c1, v1) = coord1.get_mut(i).unwrap();
+            let dv = (*c1 - *c2).signum();
+            *v1 -= dv;
+            *v2 += dv
         }
     }
-    coords
-        .iter_mut()
-        .for_each(|coord| coord[i].0 += coord[i].1);
+    coords.iter_mut().for_each(|coord| coord[i].0 += coord[i].1);
 }
 
 fn gcd(a: usize, b: usize) -> usize {
