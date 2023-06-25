@@ -9,7 +9,7 @@ pub fn part1(input: &str) -> u64 {
 
 pub fn part2(input: &str) -> u64 {
     let reactions = parse(input);
-    let mut leftovers: HashMap<_, _> = HashMap::new();
+    let mut leftovers = HashMap::new();
 
     let mut fuel = 1;
     let target = 1_000_000_000_000;
