@@ -57,7 +57,7 @@ pub fn part2(input: &str) -> u32 {
         }
     }
 
-    assert!(oxygen_p!=(0,0));
+    assert!(oxygen_p != (0, 0));
 
     let mut q = VecDeque::from([(oxygen_p, 0)]);
     let mut time_max = 0;
