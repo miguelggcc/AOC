@@ -3,8 +3,8 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use super::intcode::IntCode;
 
 pub fn part1(input: &str) -> u32 {
-    let computer = IntCode::new(input);
-    let mut q = VecDeque::from([((0, 0), computer, 0)]);
+    let ic = IntCode::new(input);
+    let mut q = VecDeque::from([((0, 0), ic, 0)]);
     let mut map = HashSet::new();
     while let Some((p, computer, d)) = q.pop_front() {
         for (i, m) in MOVES.iter().enumerate() {
@@ -29,14 +29,12 @@ pub fn part1(input: &str) -> u32 {
     panic!("oxygen system not found")
 }
 
-const MOVES: [(i32, i32); 4] = [(0, 1), (0, -1), (-1, 0), (1, 0)];
-
 pub fn part2(input: &str) -> u32 {
-    let computer = IntCode::new(input);
-    let mut q = VecDeque::from([((0, 0), computer, 0)]);
+    let ic = IntCode::new(input);
+    let mut q = VecDeque::from([((0, 0), ic)]);
     let mut map = HashMap::new();
     let mut oxygen_p = (0, 0);
-    while let Some((p, computer, d)) = q.pop_front() {
+    while let Some((p, computer)) = q.pop_front() {
         for (i, m) in MOVES.iter().enumerate() {
             let new_p = (p.0 + m.0, p.1 + m.1);
             if !map.contains_key(&new_p) {
@@ -48,7 +46,7 @@ pub fn part2(input: &str) -> u32 {
                     }
                     1 => {
                         map.insert(new_p, 1);
-                        q.push_back((new_p, copy, d + 1));
+                        q.push_back((new_p, copy));
                     }
                     2 => {
                         oxygen_p = new_p;
@@ -58,6 +56,8 @@ pub fn part2(input: &str) -> u32 {
             }
         }
     }
+
+    assert!(oxygen_p!=(0,0));
 
     let mut q = VecDeque::from([(oxygen_p, 0)]);
     let mut time_max = 0;
@@ -73,3 +73,5 @@ pub fn part2(input: &str) -> u32 {
     }
     time_max
 }
+
+const MOVES: [(i32, i32); 4] = [(0, 1), (0, -1), (-1, 0), (1, 0)];
