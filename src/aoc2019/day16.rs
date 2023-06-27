@@ -1,57 +1,50 @@
 pub fn part1(input: &str) -> u32 {
-    let len = input.bytes().len();
     let mut signal: Vec<_> = input.bytes().map(|b| (b - b'0') as i32).collect();
+
     for _ in 0..100 {
-        signal = (1..=len)
-            .map(|i| {
-                signal
-                    .iter()
-                    .zip(get_iterator(i))
-                    .map(|(d, p)| d * p)
+        signal = (1..signal.len() + 1)
+            .map(|digit| {
+                (signal[digit - 1..]
+                    .chunks(digit)
+                    .step_by(4)
+                    .flatten()
                     .sum::<i32>()
-                    .abs()
+                    - signal[(3 * (digit) - 1).min(signal.len())..]
+                        .chunks(digit)
+                        .step_by(4)
+                        .flatten()
+                        .sum::<i32>())
+                .abs()
                     % 10
             })
-            .collect();
+            .collect::<Vec<_>>()
     }
+
     signal
         .into_iter()
         .take(8)
         .fold(0, |acc, d| acc * 10 + d as u32)
 }
 
-fn get_iterator(n: usize) -> impl Iterator<Item = i32> {
-    BLUEPRINT
-        .iter()
-        .flat_map(move |&i| std::iter::repeat(i).take(n))
-        .cycle()
-        .skip(1)
-}
-
-const BLUEPRINT: [i32; 4] = [0, 1, 0, -1];
-
 pub fn part2(input: &str) -> u32 {
-    let small_signal: Vec<_> = input.bytes().map(|b| (b - b'0') as i32).collect();
+    let small_signal: Vec<_> = input.bytes().map(|b| (b - b'0') as u32).collect();
     let len = small_signal.len();
-    let output_index = small_signal
-        .iter()
-        .take(7)
-        .fold(0, |acc, &d| acc * 10 + d as usize);
-    assert!(output_index >= len * 10_000 / 2);
-    let mut signal = small_signal[(output_index) % len..].to_vec();
-    signal.append(&mut small_signal.repeat((len * 10_000 - output_index) / len));
+    let index = small_signal[..7].iter().fold(0, |acc, &d| acc * 10 + d) as usize;
+
+    assert!(index >= len * 10_000 / 2);
+
+    let mut signal = small_signal[index % len..].to_vec();
+    signal.append(&mut small_signal.repeat((len * 10_000 - index) / len));
 
     for _ in 0..100 {
-        for i in (0..signal.len() - 1).rev() {
-            signal[i] += signal[i + 1];
-            signal[i] %= 10;
+        let mut prev = *signal.last().unwrap();
+        for d in (signal.iter_mut()).rev().skip(1) {
+            *d = (*d + prev) % 10;
+            prev = *d;
         }
     }
 
-    signal
-        .into_iter()
-        .take(8)
-        .fold(0, |acc, d| acc * 10 + d as u32)
+    signal.into_iter().take(8).fold(0, |acc, d| acc * 10 + d)
 }
 
 #[cfg(test)]
