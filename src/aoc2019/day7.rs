@@ -8,7 +8,7 @@ pub fn part1(input: &str) -> u32 {
         .map(|n| {
             n.into_iter().fold(0, |acc, d| {
                 let mut copy = intcode.clone();
-                copy.execute_inputs(vec![acc, d]);
+                copy.execute_inputs(vec![d, acc]);
                 copy.output.pop().unwrap()
             }) as u32
         })
@@ -29,7 +29,7 @@ pub fn part2(input: &str) -> u32 {
                 .for_each(|(a, &n)| a.execute_input(n));
             while !amps[4].halted {
                 for amp in amps.iter_mut() {
-                    amp.execute_inputs(vec![out]);
+                    amp.execute_input(out);
                     out = amp.output.pop().unwrap();
                 }
             }

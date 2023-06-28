@@ -96,8 +96,8 @@ impl IntCode {
         self.execute();
     }
 
-    pub fn execute_inputs(&mut self, mut n: Vec<isize>) {
-        self.input.append(&mut n);
+    pub fn execute_inputs(&mut self, n: Vec<isize>) {
+        self.input.extend(n.into_iter().rev());
         self.execute();
     }
 
