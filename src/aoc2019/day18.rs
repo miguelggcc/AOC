@@ -15,15 +15,14 @@ pub fn part1(input: &str) -> u32 {
     for &(obj_index, _) in first.paths.iter() {
         get_distances(obj_index, map.clone(), &mut objects);
     }
-
     objects.push(first);
+
     let state = State {
         indices: [objects.len() - 1],
         distance: 0,
         obstructed,
         keys: 2u32.pow(n_keys as u32) - 1,
     };
-
     find_minimum(state, objects)
 }
 
@@ -57,6 +56,7 @@ pub fn part2(input: &str) -> u32 {
         get_distances(obj_index, map.clone(), &mut objects)
     }
     objects.extend_from_slice(&starters);
+    
     let len = objects.len();
     let state = State {
         indices: [len - 4, len - 3, len - 2, len - 1],
@@ -64,7 +64,6 @@ pub fn part2(input: &str) -> u32 {
         obstructed,
         keys: 2u32.pow(n_keys as u32) - 1,
     };
-
     find_minimum(state, objects)
 }
 
