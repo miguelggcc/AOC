@@ -12,7 +12,7 @@ pub fn part1(input: &str) -> u32 {
         .unwrap();
     let n_keys = map.iter().filter(|&c| c.is_lowercase()).count();
     let mut objects = vec![Object::default(); n_keys * 2];
-    let mut obstructed = vec![0; n_keys * 2];
+    let mut obstructed = 0;
     let keys = 2u64.pow(n_keys as u32) - 1;
     (b'a'..b'a' + n_keys as u8)
         .chain(b'A'..b'A' + n_keys as u8)
@@ -28,6 +28,7 @@ pub fn part1(input: &str) -> u32 {
         &mut obstructed,
     );
 
+
     for &(obj_index, _) in first.paths.iter() {
         get_distances(obj_index, map.clone(), nx, ny, n_keys, &mut objects);
     }
@@ -35,15 +36,15 @@ pub fn part1(input: &str) -> u32 {
     objects.push(first);
     let mut max_d = u32::MAX;
     let mut cache = HashMap::new();
-    let mut q = VecDeque::from([(objects.len() - 1, 0, obstructed, keys, vec![])]);
-    while let Some((index, total_d, obstructed, keys, path)) = q.pop_front() {
+    let mut q = VecDeque::from([(objects.len() - 1, 0, obstructed, keys)]);
+    while let Some((index, total_d, obstructed, keys)) = q.pop_front() {
         if keys == 0 {
             max_d = max_d.min(total_d);
             continue;
         }
         for (n_index, d) in objects[index].paths.iter() {
-            if obstructed[*n_index] == 0
-                && (*n_index < n_keys || keys & 1u64 << n_index - n_keys == 0)
+            if obstructed & (1u64<< n_index) == 0
+                && (*n_index < n_keys || keys & 1u64 << (n_index - n_keys) == 0)
             {
                 let mut new_keys = keys.clone();
                 if n_index < &n_keys {
@@ -52,14 +53,12 @@ pub fn part1(input: &str) -> u32 {
                 let c = *cache.get(&(n_index, keys)).unwrap_or(&u32::MAX);
                 if c > total_d + d {
                     let mut new_obstructed = obstructed.clone();
-                    for o in objects[*n_index].obstructing.iter() {
-                        new_obstructed[*o] -= 1;
+                    for o in objects[*n_index].obstructing.iter(){
+                        new_obstructed ^= 1u64<< o;
                     }
-                    new_obstructed[*n_index] = 1;
-                    let mut new_path = path.clone();
-                    new_path.push((char::from(objects[*n_index].id), total_d + d));
+                    new_obstructed|= 1u64<<n_index;
                     cache.insert((n_index, new_keys), total_d + d);
-                    q.push_back((*n_index, total_d + d, new_obstructed, new_keys, new_path));
+                    q.push_back((*n_index, total_d + d, new_obstructed, new_keys));
                 }
             }
         }
@@ -79,7 +78,7 @@ pub fn part2(input: &str) -> u32 {
         .unwrap();
     let n_keys = map.iter().filter(|&c| c.is_lowercase()).count();
     let mut objects = vec![Object::default(); n_keys * 2];
-    let mut obstructed = vec![0; n_keys * 2];
+    let mut obstructed = 0;
     let keys = 2u64.pow(n_keys as u32) - 1;
     (b'a'..b'a' + n_keys as u8)
         .chain(b'A'..b'A' + n_keys as u8)
@@ -119,20 +118,19 @@ pub fn part2(input: &str) -> u32 {
         0,
         obstructed,
         keys,
-        vec![],
     )]);
-    while let Some((indices, total_d, obstructed, keys, path)) = q.pop_front() {
+    while let Some((indices, total_d, obstructed, keys)) = q.pop_front() {
         if keys == 0 {
             max_d = max_d.min(total_d);
             continue;
         }
         for i in 0..4 {
-            let mut new_indices = indices.clone();
-            for (n_index, d) in objects[new_indices[i]].paths.iter() {
-                if obstructed[*n_index] == 0
+            for (n_index, d) in objects[indices[i]].paths.iter() {
+                if obstructed & 1u64<< n_index == 0
                     && (*n_index < n_keys || keys & 1u64 << n_index - n_keys == 0)
                 {
                     let mut new_keys = keys.clone();
+                    let mut new_indices = indices.clone();
                     if n_index < &n_keys {
                         new_keys ^= 1u64 << *n_index;
                     }
@@ -140,14 +138,12 @@ pub fn part2(input: &str) -> u32 {
                     let c = *cache.get(&(new_indices, keys)).unwrap_or(&u32::MAX);
                     if c > total_d + d {
                         let mut new_obstructed = obstructed.clone();
-                        for o in objects[*n_index].obstructing.iter() {
-                            new_obstructed[*o] -= 1;
+                        for o in objects[*n_index].obstructing.iter(){
+                            new_obstructed ^= 1u64<< o;
                         }
-                        new_obstructed[*n_index] = 1;
-                        let mut new_path = path.clone();
-                        new_path.push((char::from(objects[*n_index].id), total_d + d));
+                        new_obstructed|= 1u64<<n_index;
                         cache.insert((new_indices, new_keys), total_d + d);
-                        q.push_back((new_indices, total_d + d, new_obstructed, new_keys, new_path));
+                        q.push_back((new_indices, total_d + d, new_obstructed, new_keys));
                     }
                 }
             }
@@ -163,31 +159,31 @@ fn get_starter_robots(
     ny: i32,
     n_keys: usize,
     objects: &mut Vec<Object>,
-    obstructed: &mut Vec<u8>,
+    obstructed_list: &mut u64,
 ) -> Object {
     let mut starter = Object::default();
-    let mut q: VecDeque<((i32, i32), u32, Vec<usize>)> = VecDeque::from([(spawn, 0, vec![])]);
-    while let Some((pos, d, obstructions)) = q.pop_front() {
+    let mut q: VecDeque<((i32, i32), u32, Option<usize>)> = VecDeque::from([(spawn, 0, None)]);
+    while let Some((pos, d, obstructing)) = q.pop_front() {
         for m in MOVES {
             let (new_x, new_y) = (pos.0 + m.0, pos.1 + m.1);
             let c = map.get_mut((new_x + new_y * nx) as usize).unwrap();
             if new_x >= 0 && new_x < nx && new_y >= 0 && new_y < ny && *c != '#' {
-                let mut new_obstructions = obstructions.clone();
+                let mut new_obstructing = obstructing;
                 if c.is_alphabetic() {
                     let index = if c.is_lowercase() {
                         (*c as u8 - b'a') as usize
                     } else {
                         n_keys + (*c as u8 - b'A') as usize
                     };
-                    obstructed[index] += obstructions.len() as u8;
-                    for o in new_obstructions.iter() {
-                        objects[*o].obstructing.push(index);
+                    if let Some(obstructing_index) = obstructing {
+                        *obstructed_list|= 1u64 <<index;
+                        objects[obstructing_index].obstructing.push(index);
                     }
-                    new_obstructions.push(index);
+                    new_obstructing = Some(index);
                     starter.paths.push((index, d + 1));
                 }
                 *c = '#';
-                q.push_back(((new_x, new_y), d + 1, new_obstructions));
+                q.push_back(((new_x, new_y), d + 1, new_obstructing));
             }
         }
     }
@@ -265,3 +261,4 @@ mod day18 {
         assert_eq!(part2(input), 24);
     }
 }
+
