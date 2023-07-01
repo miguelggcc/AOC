@@ -1,4 +1,7 @@
-use std::collections::{HashMap, VecDeque};
+use std::{
+    cmp::Ordering,
+    collections::{BinaryHeap, HashMap, VecDeque},
+};
 
 pub fn part1(input: &str) -> u32 {
     let nx = input.lines().next().unwrap().len() as i32;
@@ -13,7 +16,7 @@ pub fn part1(input: &str) -> u32 {
     let n_keys = map.iter().filter(|&c| c.is_lowercase()).count();
     let mut objects = vec![Object::default(); n_keys * 2];
     let mut obstructed = 0;
-    let keys = 2u64.pow(n_keys as u32) - 1;
+    let keys = 2u32.pow(n_keys as u32) - 1;
     (b'a'..b'a' + n_keys as u8)
         .chain(b'A'..b'A' + n_keys as u8)
         .enumerate()
@@ -28,42 +31,19 @@ pub fn part1(input: &str) -> u32 {
         &mut obstructed,
     );
 
-
     for &(obj_index, _) in first.paths.iter() {
         get_distances(obj_index, map.clone(), nx, ny, n_keys, &mut objects);
     }
 
     objects.push(first);
-    let mut max_d = u32::MAX;
-    let mut cache = HashMap::new();
-    let mut q = VecDeque::from([(objects.len() - 1, 0, obstructed, keys)]);
-    while let Some((index, total_d, obstructed, keys)) = q.pop_front() {
-        if keys == 0 {
-            max_d = max_d.min(total_d);
-            continue;
-        }
-        for (n_index, d) in objects[index].paths.iter() {
-            if obstructed & (1u64<< n_index) == 0
-                && (*n_index < n_keys || keys & 1u64 << (n_index - n_keys) == 0)
-            {
-                let mut new_keys = keys.clone();
-                if n_index < &n_keys {
-                    new_keys ^= 1u64 << *n_index;
-                }
-                let c = *cache.get(&(n_index, keys)).unwrap_or(&u32::MAX);
-                if c > total_d + d {
-                    let mut new_obstructed = obstructed.clone();
-                    for o in objects[*n_index].obstructing.iter(){
-                        new_obstructed ^= 1u64<< o;
-                    }
-                    new_obstructed|= 1u64<<n_index;
-                    cache.insert((n_index, new_keys), total_d + d);
-                    q.push_back((*n_index, total_d + d, new_obstructed, new_keys));
-                }
-            }
-        }
-    }
-    max_d
+    let state = State {
+        indices: [objects.len() - 1],
+        distance: 0,
+        obstructed,
+        keys,
+    };
+
+    find_minimum(state, objects, n_keys)
 }
 
 pub fn part2(input: &str) -> u32 {
@@ -79,7 +59,7 @@ pub fn part2(input: &str) -> u32 {
     let n_keys = map.iter().filter(|&c| c.is_lowercase()).count();
     let mut objects = vec![Object::default(); n_keys * 2];
     let mut obstructed = 0;
-    let keys = 2u64.pow(n_keys as u32) - 1;
+    let keys = 2u32.pow(n_keys as u32) - 1;
     (b'a'..b'a' + n_keys as u8)
         .chain(b'A'..b'A' + n_keys as u8)
         .enumerate()
@@ -110,46 +90,15 @@ pub fn part2(input: &str) -> u32 {
         get_distances(obj_index, map.clone(), nx, ny, n_keys, &mut objects)
     }
     objects.extend_from_slice(&starters);
-    let mut max_d = u32::MAX;
-    let mut cache = HashMap::new();
     let len = objects.len();
-    let mut q = VecDeque::from([(
-        [len - 4, len - 3, len - 2, len - 1],
-        0,
+    let state = State {
+        indices: [len - 4, len - 3, len - 2, len - 1],
+        distance: 0,
         obstructed,
         keys,
-    )]);
-    while let Some((indices, total_d, obstructed, keys)) = q.pop_front() {
-        if keys == 0 {
-            max_d = max_d.min(total_d);
-            continue;
-        }
-        for i in 0..4 {
-            for (n_index, d) in objects[indices[i]].paths.iter() {
-                if obstructed & 1u64<< n_index == 0
-                    && (*n_index < n_keys || keys & 1u64 << n_index - n_keys == 0)
-                {
-                    let mut new_keys = keys.clone();
-                    let mut new_indices = indices.clone();
-                    if n_index < &n_keys {
-                        new_keys ^= 1u64 << *n_index;
-                    }
-                    new_indices[i] = *n_index;
-                    let c = *cache.get(&(new_indices, keys)).unwrap_or(&u32::MAX);
-                    if c > total_d + d {
-                        let mut new_obstructed = obstructed.clone();
-                        for o in objects[*n_index].obstructing.iter(){
-                            new_obstructed ^= 1u64<< o;
-                        }
-                        new_obstructed|= 1u64<<n_index;
-                        cache.insert((new_indices, new_keys), total_d + d);
-                        q.push_back((new_indices, total_d + d, new_obstructed, new_keys));
-                    }
-                }
-            }
-        }
-    }
-    max_d
+    };
+
+    find_minimum(state, objects, n_keys)
 }
 
 fn get_starter_robots(
@@ -176,7 +125,7 @@ fn get_starter_robots(
                         n_keys + (*c as u8 - b'A') as usize
                     };
                     if let Some(obstructing_index) = obstructing {
-                        *obstructed_list|= 1u64 <<index;
+                        *obstructed_list |= 1u64 << index;
                         objects[obstructing_index].obstructing.push(index);
                     }
                     new_obstructing = Some(index);
@@ -225,6 +174,68 @@ fn get_distances(
     }
 }
 
+fn find_minimum<const R: usize>(state: State<R>, objects: Vec<Object>, n_keys: usize) -> u32 {
+    let mut q = BinaryHeap::from([state]);
+    let mut cache = HashMap::new();
+    while let Some(state) = q.pop() {
+        if state.keys == 0 {
+            return state.distance;
+        }
+        for i in 0..state.indices.len() {
+            for (n_index, d) in objects[state.indices[i]].paths.iter() {
+                if state.obstructed & (1u64 << n_index) == 0
+                    && (*n_index < n_keys || state.keys & 1u32 << (n_index - n_keys) == 0)
+                {
+                    let mut new_state = state.clone();
+                    if n_index < &n_keys {
+                        new_state.keys ^= 1u32 << *n_index;
+                    }
+                    new_state.indices[i] = *n_index;
+                    let c = *cache.get(&new_state.get_key()).unwrap_or(&u32::MAX);
+                    if c > state.distance + d {
+                        for o in objects[*n_index].obstructing.iter() {
+                            new_state.obstructed ^= 1u64 << o;
+                        }
+                        new_state.obstructed |= 1u64 << n_index;
+                        new_state.distance = state.distance + d;
+                        cache.insert(new_state.get_key(), new_state.distance);
+                        q.push(new_state);
+                    }
+                }
+            }
+        }
+    }
+    panic!("not found")
+}
+
+#[derive(Eq, PartialEq, Clone)]
+struct State<const R: usize> {
+    indices: [usize; R],
+    distance: u32,
+    obstructed: u64,
+    keys: u32,
+}
+
+impl<const R: usize> State<R> {
+    fn get_key(&self) -> u64 {
+        self.indices
+            .iter()
+            .fold(0, |acc, &i| (acc << 8) | (i as u64))
+            | (self.keys as u64) << 32
+    }
+}
+
+impl<const R: usize> Ord for State<R> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        other.distance.cmp(&self.distance)
+    }
+}
+impl<const R: usize> PartialOrd for State<R> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
 const MOVES: [(i32, i32); 4] = [(0, 1), (0, -1), (-1, 0), (1, 0)];
 
 #[derive(Debug, Clone, Default)]
@@ -261,4 +272,3 @@ mod day18 {
         assert_eq!(part2(input), 24);
     }
 }
-
