@@ -4,15 +4,7 @@ use std::{
 };
 
 pub fn part1(input: &str) -> u32 {
-    let nx = input.lines().next().unwrap().len() as i32;
-    let map: Vec<_> = input.lines().flat_map(|l| l.chars()).collect();
-    let ny = map.len() as i32 / nx;
-
-    let spawn = map
-        .iter()
-        .position(|&c| c == '@')
-        .map(|p| (p as i32 % nx, p as i32 / nx))
-        .unwrap();
+    let (map, nx, ny, spawn) = parse_map(input);
     let n_keys = map.iter().filter(|&c| c.is_lowercase()).count();
     let mut objects = vec![Object::default(); n_keys * 2];
     let mut obstructed = 0;
@@ -47,15 +39,8 @@ pub fn part1(input: &str) -> u32 {
 }
 
 pub fn part2(input: &str) -> u32 {
-    let nx = input.lines().next().unwrap().len() as i32;
-    let mut map: Vec<_> = input.lines().flat_map(|l| l.chars()).collect();
-    let ny = map.len() as i32 / nx;
+    let (mut map, nx, ny, spawn) = parse_map(input);
 
-    let spawn = map
-        .iter()
-        .position(|&c| c == '@')
-        .map(|p| (p as i32 % nx, p as i32 / nx))
-        .unwrap();
     let n_keys = map.iter().filter(|&c| c.is_lowercase()).count();
     let mut objects = vec![Object::default(); n_keys * 2];
     let mut obstructed = 0;
@@ -74,9 +59,9 @@ pub fn part2(input: &str) -> u32 {
         (spawn.0 + 1, spawn.1 - 1),
         (spawn.0 + 1, spawn.1 + 1),
     ]
-    .map(|spawn| {
+    .map(|s| {
         get_starter_robots(
-            spawn,
+            s,
             map.clone(),
             nx,
             ny,
@@ -100,6 +85,8 @@ pub fn part2(input: &str) -> u32 {
 
     find_minimum(state, objects, n_keys)
 }
+
+const MOVES: [(i32, i32); 4] = [(0, 1), (0, -1), (-1, 0), (1, 0)];
 
 fn get_starter_robots(
     spawn: (i32, i32),
@@ -236,13 +223,24 @@ impl<const R: usize> PartialOrd for State<R> {
     }
 }
 
-const MOVES: [(i32, i32); 4] = [(0, 1), (0, -1), (-1, 0), (1, 0)];
-
 #[derive(Debug, Clone, Default)]
 struct Object {
     id: u8,
     paths: Vec<(usize, u32)>,
     obstructing: Vec<usize>,
+}
+
+fn parse_map(input: &str) -> (Vec<char>, i32, i32, (i32, i32)) {
+    let nx = input.lines().next().unwrap().len() as i32;
+    let map: Vec<_> = input.lines().flat_map(|l| l.chars()).collect();
+    let ny = map.len() as i32 / nx;
+
+    let spawn = map
+        .iter()
+        .position(|&c| c == '@')
+        .map(|p| (p as i32 % nx, p as i32 / nx))
+        .unwrap();
+    (map, nx, ny, spawn)
 }
 
 #[cfg(test)]
