@@ -34,16 +34,9 @@ pub fn part2(input: &str) -> u32 {
         .flat_map(|i| [Object::new(i + b'a'), Object::new(i + b'A')])
         .collect();
     let mut obstructed = 0;
-    let spawn_index = spawn.0 + spawn.1 * map.nx;
-    [
-        spawn_index - map.nx,
-        spawn_index - 1,
-        spawn_index,
-        spawn_index + 1,
-        spawn_index + map.nx,
-    ]
-    .into_iter()
-    .for_each(|c| map.v[c as usize] = '#');
+    MOVES
+        .iter()
+        .for_each(|(dx, dy)| map.v[(spawn.0 + dx + (spawn.1 + dy) * map.nx) as usize] = '#');
     let starters = [
         (spawn.0 - 1, spawn.1 - 1),
         (spawn.0 - 1, spawn.1 + 1),
@@ -56,7 +49,7 @@ pub fn part2(input: &str) -> u32 {
         get_distances(obj_index, map.clone(), &mut objects)
     }
     objects.extend_from_slice(&starters);
-    
+
     let len = objects.len();
     let state = State {
         indices: [len - 4, len - 3, len - 2, len - 1],
@@ -87,7 +80,7 @@ fn get_robots(
                     let index = get_index(*c);
                     if let Some(obstructing_index) = obstructing {
                         *obstructed |= 1u64 << index;
-                        objects[obstructing_index].obstructing.push(index);
+                        objects[obstructing_index].obstructing |= 1u64 << index;
                     }
                     new_obstructing = Some(index);
                     starter.paths.push((index, d + 1));
@@ -130,7 +123,7 @@ fn find_minimum<const I: usize>(state: State<I>, objects: Vec<Object>) -> u32 {
         if state.keys == 0 {
             return state.distance;
         }
-        for i in 0..state.indices.len() {
+        for i in 0..I {
             for (n_index, d) in objects[state.indices[i]].paths.iter() {
                 if state.obstructed & (1u64 << n_index) == 0
                     && (n_index % 2 == 0 || state.keys & 1u32 << (n_index / 2) == 0)
@@ -142,9 +135,8 @@ fn find_minimum<const I: usize>(state: State<I>, objects: Vec<Object>) -> u32 {
                     new_state.indices[i] = *n_index;
                     let c = *cache.get(&new_state.get_key()).unwrap_or(&u32::MAX);
                     if c > state.distance + d {
-                        for o in objects[*n_index].obstructing.iter() {
-                            new_state.obstructed ^= 1u64 << o;
-                        }
+                        new_state.obstructed ^= objects[*n_index].obstructing;
+
                         new_state.obstructed |= 1u64 << n_index;
                         new_state.distance += d;
                         cache.insert(new_state.get_key(), new_state.distance);
@@ -189,7 +181,7 @@ impl<const I: usize> PartialOrd for State<I> {
 struct Object {
     id: u8,
     paths: Vec<(usize, u32)>,
-    obstructing: Vec<usize>,
+    obstructing: u64,
 }
 
 impl Object {
