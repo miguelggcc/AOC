@@ -1,47 +1,39 @@
 use super::intcode::IntCode;
-use itertools::*;
 
-pub fn part1(input: &str) -> usize {
+pub fn part1(input: &str) -> u32 {
     let computer = IntCode::new(input);
+    let mut last = 0;
+
     (0..50)
-        .cartesian_product(0..50)
-        .filter(|&(x, y)| {
-            let mut copy = computer.clone();
-            copy.execute_inputs(vec![x, y]);
-            copy.output.pop().unwrap() == 1
+        .map(|x| {
+            let start = (last..50)
+                .find(|&y| check((x, y), computer.clone()))
+                .unwrap_or(49);
+            let end = (start..50)
+                .find(|&y| !check((x, y), computer.clone()))
+                .unwrap_or(50);
+            last = start;
+            (end - start) as u32
         })
-        .count()
+        .sum()
 }
 
 pub fn part2(input: &str) -> u32 {
     let computer = IntCode::new(input);
+    let (mut x, mut y) = (0, 0);
 
-    let mut v: Vec<_> = (0..100).map(|x| get_limits(x, 0, &computer)).collect();
-
-    for x in 100.. {
-        if v[0].1 - v[99].0 >= 100 {
-            return (v[99].0 + (x - 100) * 10_000) as u32;
+    loop {
+        while !check((x, y + 99), computer.clone()) {
+            x += 1;
         }
-        v.rotate_left(1);
-        v[99] = get_limits(x, v[98].0, &computer);
+        if check((x + 99, y), computer.clone()) {
+            return (10_000 * x + y) as u32;
+        }
+        y += 1;
     }
-    panic!("point not found");
 }
 
-fn get_limits(x: isize, last: isize, computer: &IntCode) -> (isize, isize) {
-    let start = (last..)
-        .find(|&y| {
-            let mut copy = computer.clone();
-            copy.execute_inputs(vec![x, y]);
-            copy.output.pop().unwrap() == 1
-        })
-        .unwrap();
-    let end = (start..)
-        .find(|&y| {
-            let mut copy = computer.clone();
-            copy.execute_inputs(vec![x, y]);
-            copy.output.pop().unwrap() == 0
-        })
-        .unwrap();
-    (start, end)
+fn check((x, y): (isize, isize), mut computer: IntCode) -> bool {
+    computer.execute_inputs(vec![x, y]);
+    computer.output.pop().unwrap() == 1
 }
