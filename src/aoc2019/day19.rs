@@ -9,7 +9,7 @@ pub fn part1(input: &str) -> u32 {
             let start = (last..50)
                 .find(|&y| check((x, y), computer.clone()))
                 .unwrap_or(50);
-            let end = (start+1..50)
+            let end = (start + 1..50)
                 .find(|&y| !check((x, y), computer.clone()))
                 .unwrap_or(50);
             last = start;
