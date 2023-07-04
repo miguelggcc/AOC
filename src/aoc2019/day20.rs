@@ -4,10 +4,10 @@ pub fn part1(input: &str) -> u32 {
     let (mut map, nx, _, mut portals) = parse_map(input);
 
     let aa = portals.remove("AA").unwrap()[0];
-    map[aa] = b'#';
     let mut q = VecDeque::from([(aa, 0)]);
 
     while let Some((pos, d)) = q.pop_front() {
+        map[pos] = b'#';
         for m in MOVES {
             let mut new_pos = (pos as i32 + m.0 + m.1 * nx) as usize;
             let c = map[new_pos];
@@ -31,7 +31,6 @@ pub fn part1(input: &str) -> u32 {
                         continue;
                     }
                 }
-                map[new_pos] = b'#';
                 q.push_back((new_pos, d + 1));
             }
         }
@@ -95,9 +94,9 @@ struct Portal {
 
 impl Portal {
     fn floodfill(&mut self, aa: usize, mut map: Vec<u8>, nx: i32, indices: &HashMap<usize, usize>) {
-        map[self.pos] = b'#';
         let mut q = VecDeque::from([(self.pos, 0)]);
         while let Some((pos, d)) = q.pop_front() {
+            map[pos] = b'#';
             for m in MOVES {
                 let new_pos = (pos as i32 + m.0 + m.1 * nx) as usize;
                 let c = map[new_pos];
@@ -108,7 +107,6 @@ impl Portal {
                         }
                         continue;
                     }
-                    map[new_pos] = b'#';
                     q.push_back((new_pos, d + 1));
                 }
             }
