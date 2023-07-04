@@ -85,6 +85,8 @@ pub fn part2(input: &str) -> u32 {
     panic!("path not found")
 }
 
+const MOVES: [(i32, i32); 4] = [(0, -1), (-1, 0), (1, 0), (0, 1)];
+
 struct Portal {
     id: String,
     inside: bool,
@@ -142,8 +144,6 @@ fn parse_map(input: &str) -> (Vec<u8>, i32, i32, HashMap<String, Vec<usize>>) {
     });
     (map, nx, ny, portals)
 }
-
-const MOVES: [(i32, i32); 4] = [(0, -1), (-1, 0), (1, 0), (0, 1)];
 
 #[cfg(test)]
 mod day20 {
