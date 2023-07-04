@@ -76,9 +76,7 @@ pub fn part2(input: &str) -> u32 {
                 if level == 0 {
                     return total_d + d - 1;
                 }
-                continue;
-            }
-            if nodes[index].inside {
+            } else if nodes[index].inside {
                 q.push_back((index - 1, total_d + d, level + 1));
             } else if level > 0 {
                 q.push_back((index + 1, total_d + d, level - 1));
