@@ -13,11 +13,11 @@ pub fn part1(input: &str) -> u32 {
             let c = map[new_pos];
             if c != b'#' {
                 if c.is_ascii_alphabetic() {
-                    let diff_point = m.0 + m.1 * nx;
-                    let id = if diff_point.is_negative() {
-                        [map[new_pos - diff_point.unsigned_abs() as usize], c]
+                    let d_2_letter = m.0 + m.1 * nx;
+                    let id = if d_2_letter.is_negative() {
+                        [map[new_pos - d_2_letter.unsigned_abs() as usize], c]
                     } else {
-                        [c, map[new_pos + diff_point as usize]]
+                        [c, map[new_pos + d_2_letter as usize]]
                     };
                     let id = std::str::from_utf8(&id).unwrap();
 
@@ -45,8 +45,9 @@ pub fn part2(input: &str) -> u32 {
     let mut indices = HashMap::new();
     let mut index = 0;
     let aa = portals.get("AA").unwrap()[0];
+    let zz = portals.get("ZZ").unwrap()[0];
 
-    portals.into_iter().for_each(|(id, mut pos)| {
+    portals.into_iter().for_each(|(_, mut pos)| {
         pos.sort_by_key(|&p| {
             let (px, py) = (p as i32 % nx, p as i32 / nx);
             px > 2 && px < nx - 3 && py > 2 && py < ny - 3
@@ -55,7 +56,6 @@ pub fn part2(input: &str) -> u32 {
             indices.insert(p, index);
             index += 1;
             nodes.push(Portal {
-                id: id.clone(),
                 inside: i == 1,
                 pos: p,
                 paths: vec![],
@@ -67,11 +67,13 @@ pub fn part2(input: &str) -> u32 {
         node.floodfill(aa, map.clone(), nx, &indices);
     }
 
-    let mut q = VecDeque::from([(*indices.get(&aa).unwrap(), 0, 0)]);
+    let end = *indices.get(&zz).unwrap();
+
+    let mut q = VecDeque::from([(*indices.get(&aa).unwrap(), 0, 0u8)]);
 
     while let Some((parent_index, total_d, level)) = q.pop_front() {
         for &(index, d) in nodes[parent_index].paths.iter() {
-            if nodes[index].id == "ZZ" {
+            if index == end {
                 if level == 0 {
                     return total_d + d - 1;
                 }
@@ -88,7 +90,6 @@ pub fn part2(input: &str) -> u32 {
 const MOVES: [(i32, i32); 4] = [(0, -1), (-1, 0), (1, 0), (0, 1)];
 
 struct Portal {
-    id: String,
     inside: bool,
     pos: usize,
     paths: Vec<(usize, u32)>,
@@ -122,7 +123,7 @@ fn parse_map(input: &str) -> (Vec<u8>, i32, i32, HashMap<String, Vec<usize>>) {
     let ny = map.len() as i32 / nx;
 
     let mut portals = HashMap::new();
-    map.iter().enumerate().for_each(|(i, &c)| {
+    for (i, &c) in map.iter().enumerate() {
         if c.is_ascii_alphabetic() {
             if let Some(&m_point) = MOVES
                 .iter()
@@ -134,14 +135,13 @@ fn parse_map(input: &str) -> (Vec<u8>, i32, i32, HashMap<String, Vec<usize>>) {
                 } else {
                     vec![map[i - d_2_point as usize], c]
                 };
-
                 portals
                     .entry(String::from_utf8(id).unwrap())
                     .or_insert(vec![])
                     .push((i as i32 + d_2_point) as usize);
             }
         }
-    });
+    }
     (map, nx, ny, portals)
 }
 

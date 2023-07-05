@@ -3,23 +3,14 @@ pub struct IntCode {
     pub p: Vec<isize>,
     i: usize,
     ri: isize,
-    pub input: Vec<isize>,
+    input: Vec<isize>,
     pub output: Vec<isize>,
     pub halted: bool,
 }
 
-enum Instruction {
-    Add((usize, usize, usize)),
-    Mul((usize, usize, usize)),
-    Input(usize),
-    Output(usize),
-    JumpIfTrue((usize, usize)),
-    JumpIfFalse((usize, usize)),
-    LessThan((usize, usize, usize)),
-    Equal((usize, usize, usize)),
-    RelativeOffset(usize),
-    Halt,
-}
+type OnePar = usize;
+type TwoPar = (usize, usize);
+type ThreePar = (usize, usize, usize);
 
 impl IntCode {
     pub fn new(input: &str) -> Self {
@@ -36,29 +27,12 @@ impl IntCode {
             halted: false,
         }
     }
-    fn get_instruction(&mut self) -> Instruction {
-        let opcode = self.next();
-        let pmode = opcode / 100;
-        match opcode % 100 {
-            1 => Instruction::Add(self.get_3parameters(pmode)),
-            2 => Instruction::Mul(self.get_3parameters(pmode)),
-            3 => Instruction::Input(self.get_1parameter(pmode)),
-            4 => Instruction::Output(self.get_1parameter(pmode)),
-            5 => Instruction::JumpIfTrue(self.get_2parameters(pmode)),
-            6 => Instruction::JumpIfFalse(self.get_2parameters(pmode)),
-            7 => Instruction::LessThan(self.get_3parameters(pmode)),
-            8 => Instruction::Equal(self.get_3parameters(pmode)),
-            9 => Instruction::RelativeOffset(self.get_1parameter(pmode)),
-            99 => Instruction::Halt,
-            e => panic!("uknown instruction {e}"),
-        }
-    }
 
     fn next(&mut self) -> usize {
         self.i += 1;
         self.p[self.i - 1] as usize
     }
-    fn get_parameter(&mut self, pmode: usize, d: usize) -> usize {
+    fn get_parameter(&mut self, pmode: usize, d: usize) -> OnePar {
         self.i += 1;
         match (pmode / d) % 10 {
             2 => (self.ri + self.p[self.i - 1]) as usize,
@@ -67,30 +41,33 @@ impl IntCode {
         }
     }
 
-    fn get_1parameter(&mut self, pmode: usize) -> usize {
+    fn get_1parameter(&mut self, pmode: usize) -> OnePar {
         self.get_parameter(pmode, 1)
     }
 
-    fn get_2parameters(&mut self, pmode: usize) -> (usize, usize) {
+    fn get_2parameters(&mut self, pmode: usize) -> TwoPar {
         (self.get_parameter(pmode, 1), self.get_parameter(pmode, 10))
     }
 
-    fn get_3parameters(&mut self, pmode: usize) -> (usize, usize, usize) {
+    fn get_3parameters(&mut self, pmode: usize) -> ThreePar {
         (
             self.get_parameter(pmode, 1),
             self.get_parameter(pmode, 10),
             self.get_parameter(pmode, 100),
         )
     }
-    fn p(&self, i: usize) -> isize {
+
+    fn get_p(&self, i: usize) -> isize {
         *self.p.get(i).unwrap_or(&0)
     }
-    fn pmut(&mut self, i: usize) -> &mut isize {
+
+    fn get_pmut(&mut self, i: usize) -> &mut isize {
         if i >= self.p.len() {
             self.p.resize(i + 1, 0);
         }
         self.p.get_mut(i).unwrap()
     }
+
     pub fn execute_input(&mut self, n: isize) {
         self.input.push(n);
         self.execute();
@@ -101,39 +78,97 @@ impl IntCode {
         self.execute();
     }
 
+    pub fn execute_string(&mut self, mut s: String) {
+        s.push('\n');
+        self.input.extend(s.bytes().rev().map(|n| n as isize));
+        self.execute();
+    }
+
     pub fn execute(&mut self) {
         while self.i < self.p.len() && !self.halted {
-            match self.get_instruction() {
-                Instruction::Add((p1, p2, o)) => *self.pmut(o) = self.p(p1) + self.p(p2),
-                Instruction::Mul((p1, p2, o)) => *self.pmut(o) = self.p(p1) * self.p(p2),
-                Instruction::Input(o) => {
-                    if let Some(last) = self.input.pop() {
-                        *self.pmut(o) = last;
-                    } else {
-                        self.i -= 2;
+            let opcode = self.next();
+            let pmode = opcode / 100;
+            match opcode % 100 {
+                1 => self.add(pmode),
+                2 => self.mul(pmode),
+                3 => {
+                    if !self.input(pmode) {
                         break;
                     }
                 }
-                Instruction::Output(p1) => self.output.push(self.p(p1)),
-                Instruction::JumpIfTrue((p1, p2)) if self.p(p1) != 0 => {
-                    self.i = self.p(p2) as usize
-                }
-                Instruction::JumpIfFalse((p1, p2)) if self.p(p1) == 0 => {
-                    self.i = self.p(p2) as usize;
-                }
-                Instruction::LessThan((p1, p2, o)) => {
-                    *self.pmut(o) = isize::from(self.p(p1) < self.p(p2))
-                }
-                Instruction::Equal((p1, p2, o)) => {
-                    *self.pmut(o) = isize::from(self.p(p1) == self.p(p2))
-                }
-                Instruction::RelativeOffset(p1) => self.ri += self.p(p1),
-                Instruction::Halt => {
-                    self.halted = true;
-                    break;
-                }
-                _ => (),
+                4 => self.output(pmode),
+                5 => self.jump_if_true(pmode),
+                6 => self.jump_if_false(pmode),
+                7 => self.less_than(pmode),
+                8 => self.equal(pmode),
+                9 => self.relative_offset(pmode),
+                99 => self.halt(),
+                e => panic!("uknown instruction {e}"),
             }
         }
+    }
+
+    fn add(&mut self, pmode: usize) {
+        let (p1, p2, o) = self.get_3parameters(pmode);
+        *self.get_pmut(o) = self.get_p(p1) + self.get_p(p2)
+    }
+
+    fn mul(&mut self, pmode: usize) {
+        let (p1, p2, o) = self.get_3parameters(pmode);
+        *self.get_pmut(o) = self.get_p(p1) * self.get_p(p2)
+    }
+
+    fn input(&mut self, pmode: usize) -> bool {
+        let o = self.get_1parameter(pmode);
+        if let Some(last) = self.input.pop() {
+            *self.get_pmut(o) = last;
+            return true;
+        }
+        self.i -= 2;
+        false
+    }
+
+    fn output(&mut self, pmode: usize) {
+        let p1 = self.get_1parameter(pmode);
+        self.output.push(self.get_p(p1))
+    }
+
+    fn jump_if_true(&mut self, pmode: usize) {
+        let (p1, p2) = self.get_2parameters(pmode);
+        if self.get_p(p1) != 0 {
+            self.i = self.get_p(p2) as usize
+        }
+    }
+
+    fn jump_if_false(&mut self, pmode: usize) {
+        let (p1, p2) = self.get_2parameters(pmode);
+        if self.get_p(p1) == 0 {
+            self.i = self.get_p(p2) as usize;
+        }
+    }
+
+    fn less_than(&mut self, pmode: usize) {
+        let (p1, p2, o) = self.get_3parameters(pmode);
+
+        *self.get_pmut(o) = isize::from(self.get_p(p1) < self.get_p(p2))
+    }
+
+    fn equal(&mut self, pmode: usize) {
+        let (p1, p2, o) = self.get_3parameters(pmode);
+        *self.get_pmut(o) = isize::from(self.get_p(p1) == self.get_p(p2))
+    }
+
+    fn relative_offset(&mut self, pmode: usize) {
+        let p1 = self.get_1parameter(pmode);
+        self.ri += self.get_p(p1)
+    }
+
+    fn halt(&mut self) {
+        self.halted = true;
+    }
+
+    #[allow(dead_code)]
+    pub fn get_output_ascii(&mut self) -> String {
+        String::from_utf8(self.output.drain(..).map(|c| c as u8).collect()).unwrap()
     }
 }

@@ -75,14 +75,9 @@ pub fn part2(input: &str) -> u32 {
     let a = "L,4,L,6,L,8,L,12";
     let b = "L,8,R,12,L,12";
     let c = "R,12,L,6,L,6,L,8";
-    let path = [complete, a, b, c, "n\n"]
-        .join("\n")
-        .bytes()
-        .map(|n| n as isize)
-        .collect();
-
+    let path = [complete, a, b, c, "n"].join("\n");
     ic.p[0] = 2;
-    ic.execute_inputs(path);
+    ic.execute_string(path);
     ic.output.pop().unwrap() as u32
 }
 
