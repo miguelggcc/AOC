@@ -34,6 +34,6 @@ pub fn part2(input: &str) -> u32 {
 }
 
 fn check((x, y): (isize, isize), mut computer: IntCode) -> bool {
-    computer.execute_inputs(vec![x, y]);
+    computer.execute_inputs(&[x, y]);
     computer.output.pop().unwrap() == 1
 }

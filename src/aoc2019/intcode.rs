@@ -1,9 +1,11 @@
+use std::collections::VecDeque;
+
 #[derive(Clone)]
 pub struct IntCode {
     pub p: Vec<isize>,
     i: usize,
     ri: isize,
-    input: Vec<isize>,
+    pub input: VecDeque<isize>,
     pub output: Vec<isize>,
     pub halted: bool,
 }
@@ -22,7 +24,7 @@ impl IntCode {
             p,
             i: 0,
             ri: 0,
-            input: vec![],
+            input: VecDeque::new(),
             output: vec![],
             halted: false,
         }
@@ -69,18 +71,23 @@ impl IntCode {
     }
 
     pub fn execute_input(&mut self, n: isize) {
-        self.input.push(n);
+        self.input.push_back(n);
         self.execute();
     }
 
-    pub fn execute_inputs(&mut self, n: Vec<isize>) {
-        self.input.extend(n.into_iter().rev());
+    pub fn execute_inputs(&mut self, n: &[isize]) {
+        self.input.extend(n);
+        self.execute();
+    }
+
+    pub fn execute_inputs_iter(&mut self, n: impl Iterator<Item = isize>) {
+        self.input.extend(n);
         self.execute();
     }
 
     pub fn execute_string(&mut self, mut s: String) {
         s.push('\n');
-        self.input.extend(s.bytes().rev().map(|n| n as isize));
+        self.input.extend(s.bytes().map(|n| n as isize));
         self.execute();
     }
 
@@ -120,7 +127,7 @@ impl IntCode {
 
     fn input(&mut self, pmode: usize) -> bool {
         let o = self.get_1parameter(pmode);
-        if let Some(last) = self.input.pop() {
+        if let Some(last) = self.input.pop_front() {
             *self.get_pmut(o) = last;
             return true;
         }

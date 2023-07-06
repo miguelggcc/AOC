@@ -8,7 +8,7 @@ pub fn part1(input: &str) -> u32 {
         .map(|n| {
             n.into_iter().fold(0, |acc, d| {
                 let mut copy = intcode.clone();
-                copy.execute_inputs(vec![d, acc]);
+                copy.execute_inputs(&[d, acc]);
                 copy.output.pop().unwrap()
             }) as u32
         })
