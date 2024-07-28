@@ -1,5 +1,16 @@
-pub fn part1(_input: &str) -> String {
-    String::from("Not implemented")
+use super::intcode::IntCode;
+
+pub fn part1(input: &str) -> String {
+    let mut ic = IntCode::new(input);
+    loop {
+        let stdin = std::io::stdin();
+        let mut command = String::new();
+        stdin.read_line(&mut command).unwrap();
+        command = command.trim_end().to_owned();
+        dbg!(&command);
+        ic.execute_string(command);
+        println!("{}", ic.get_output_ascii());
+    }
 }
 
 pub fn part2(_input: &str) -> String {
