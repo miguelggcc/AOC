@@ -1,4 +1,3 @@
-use std::fmt::Display;
 
 use nom::{
     branch::alt,
@@ -11,7 +10,6 @@ use nom::{
 };
 
 pub fn part1(input: &str) -> u32 {
-    println!("{}",test("dd"));
     input
         .lines()
         .map(|l| all_consuming(parse_game)(l).unwrap().1)
@@ -24,9 +22,7 @@ pub fn part1(input: &str) -> u32 {
         .sum()
 }
 
-fn test(a:&str)->impl Display{
-    String::from(a)
-}
+
 pub fn part2(input: &str) -> u32 {
     input
         .lines()
