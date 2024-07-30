@@ -4,18 +4,16 @@ pub fn part1(input: &str) -> impl std::fmt::Display {
     let (nx, ny, grid) = parse(input);
     let mut total = 0;
     let mut it = grid.clone().into_iter().enumerate();
+
     while let Some((i, c)) = it.next() {
         if let Some(mut n) = c.to_digit(10) {
-            let mut is_part = is_number(&grid, i as isize, nx, ny);
-            if i as isize % nx >= nx - 1 {
-                continue;
-            }
+            let mut is_part = find_symbols(&grid, i as isize, nx, ny);
             while let Some((i2, digit)) = it
                 .next()
                 .and_then(|(i2, c)| c.to_digit(10).map(|d| (i2, d)))
             {
                 n = n * 10 + digit;
-                is_part |= is_number(&grid, i2 as isize, nx, ny);
+                is_part |= find_symbols(&grid, i2 as isize, nx, ny);
                 if i2 as isize % nx >= nx - 1 {
                     break;
                 }
@@ -31,13 +29,10 @@ pub fn part2(input: &str) -> impl std::fmt::Display {
     let mut gears = HashMap::new();
     let mut total = 0;
     let mut it = grid.clone().into_iter().enumerate();
+
     while let Some((i, c)) = it.next() {
         if let Some(mut n) = c.to_digit(10) {
-            let mut gears_here = Vec::new();
-            gears_here.extend(find_gears(&grid, i as isize, nx, ny));
-            if i as isize % nx >= nx - 1 {
-                continue;
-            }
+            let mut gears_here = find_gears(&grid, i as isize, nx, ny).collect::<Vec<_>>();
             while let Some((i2, digit)) = it
                 .next()
                 .and_then(|(i2, c)| c.to_digit(10).map(|d| (i2, d)))
@@ -78,7 +73,7 @@ const MOVES: [(isize, isize); 8] = [
     (1, 1),
 ];
 
-fn is_number(grid: &[char], i: isize, nx: isize, ny: isize) -> bool {
+fn find_symbols(grid: &[char], i: isize, nx: isize, ny: isize) -> bool {
     MOVES.iter().any(|(dx, dy)| {
         let x = i % nx + dx;
         let y = i / nx + dy;
