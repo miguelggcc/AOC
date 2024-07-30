@@ -1,4 +1,4 @@
-use std::{fs, path::Path};
+use std::{fmt::Write, fs, path::Path};
 
 #[macro_export]
 macro_rules! year {
@@ -14,10 +14,10 @@ macro_rules! year {
                                     println!("Day {}",D);
                                     let time = Instant::now();
                                     let p1 = [<aoc $year >]::[<day D>]::part1(&input);
-                                    println!("{}\n in {:?}",p1, time.elapsed());
+                                    println!("{}\n in {:?}", p1, time.elapsed());
                                     let time = Instant::now();
                                     let p2 = [<aoc $year >]::[<day D>]::part2(&input);
-                                    println!("{}\n in {:?}",p2, time.elapsed());
+                                    println!("{}\n in {:?}", p2, time.elapsed());
                             })*
 
                     day => panic!("there is no day {day}"),
@@ -68,24 +68,28 @@ pub fn build_new_year(year: u32) {
     fs::create_dir_all(format!("./inputs/aoc{}", year)).expect("could not create folder");
 
     for day in 1..=25 {
-        fs::File::create(format!("./inputs/aoc{}/input_day{}.txt", year, day))
-            .expect("could not create input file");
-        let day_path = format!("{}/day{}.rs", code_path_str, day);
-        let path = Path::new(&day_path);
+        let input_path_str = format!("./inputs/aoc{year}/input_day{day}.txt");
+        let input_path = Path::new(&input_path_str);
+        if !input_path.exists() {
+            fs::File::create(input_path)
+                .expect(&("could not create input file ".to_owned() + &input_path_str));
+        }
+        let day_path_str = format!("{}/day{}.rs", code_path_str, day);
+        let path = Path::new(&day_path_str);
         if !path.exists() {
             fs::write(
                 path,
                 format!(
-                    "pub fn part1(_input: &str) -> String {{
-    String::from(\"Not implemented\")
+                    "pub fn part1(_input: &str) -> impl std::fmt::Display {{
+    \"Not implemented\"
 }}
 
-pub fn part2(_input: &str) -> String {{
-    String::from(\"Not implemented\")
+pub fn part2(_input: &str) -> impl std::fmt::Display {{
+    \"Not implemented\"
 }}
 
 #[cfg(test)]
-mod day{} {{
+mod day{day} {{
 
     use super::*;
 
@@ -94,30 +98,30 @@ mod day{} {{
     #[test]
     #[ignore]
     fn part_1() {{
-        assert_eq!(part1(INPUT), \"\");
+        assert_eq!(part1(INPUT).to_string(), \"\");
     }}
     #[test]
     #[ignore]
     fn part_2() {{
-        assert_eq!(part2(INPUT), \"\");
+        assert_eq!(part2(INPUT).to_string(), \"\");
     }}
-}}",
-                    day
+}}"
                 ),
             )
-            .expect("could not create file");
+            .expect(&("could not create file ".to_owned() + &day_path_str));
         }
 
-        let mod_path = format!("{}/mod.rs", code_path_str);
-        let path = Path::new(&mod_path);
+        let mod_path_str = format!("{}/mod.rs", code_path_str);
+        let path = Path::new(&mod_path_str);
         if !path.exists() {
             fs::write(
                 path,
-                (1..=25)
-                    .map(|d| format!("pub mod day{d};\n"))
-                    .collect::<String>(),
+                (1..=25).fold(String::new(), |mut output, d| {
+                    let _ = writeln!(output, "pub mod day{d};");
+                    output
+                }),
             )
-            .expect("could not create file")
+            .expect(&("could not create file ".to_owned() + &mod_path_str))
         }
         let bin_path_str = format!("./src/bin/{}.rs", year);
         let bin_path = Path::new(&bin_path_str);
@@ -129,15 +133,14 @@ mod day{} {{
 use paste::paste;
 use seq_macro::seq;
 use std::time::Instant;
-#[path = \"../aoc{}/mod.rs\"]
-mod aoc{};
+#[path = \"../aoc{year}/mod.rs\"]
+mod aoc{year};
 
-year!({});
-",
-                    year, year, year
+year!({year});
+"
                 ),
             )
-            .expect("could not create file")
+            .expect(&("could not create file ".to_owned() + &bin_path_str))
         }
     }
 }

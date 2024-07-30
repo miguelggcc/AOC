@@ -1,4 +1,3 @@
-
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -9,7 +8,7 @@ use nom::{
     IResult,
 };
 
-pub fn part1(input: &str) -> u32 {
+pub fn part1(input: &str) -> impl std::fmt::Display {
     input
         .lines()
         .map(|l| all_consuming(parse_game)(l).unwrap().1)
@@ -19,11 +18,10 @@ pub fn part1(input: &str) -> u32 {
                 .all(|s| s.red <= 12 && s.green <= 13 && s.blue <= 14)
         })
         .map(|game| game.id)
-        .sum()
+        .sum::<u32>()
 }
 
-
-pub fn part2(input: &str) -> u32 {
+pub fn part2(input: &str) -> impl std::fmt::Display {
     input
         .lines()
         .map(|l| {
@@ -38,7 +36,7 @@ pub fn part2(input: &str) -> u32 {
                 .iter()
                 .product::<u32>()
         })
-        .sum()
+        .sum::<u32>()
 }
 
 fn parse_game(input: &str) -> IResult<&str, Game> {
@@ -95,10 +93,10 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green";
 
     #[test]
     fn part_1() {
-        assert_eq!(part1(INPUT), 8);
+        assert_eq!(part1(INPUT).to_string(), "8");
     }
     #[test]
     fn part_2() {
-        assert_eq!(part2(INPUT), 2286);
+        assert_eq!(part2(INPUT).to_string(), "2286");
     }
 }

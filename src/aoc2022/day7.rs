@@ -80,7 +80,7 @@ fn get_size_to_delete(dir: &Dir, value: u64) -> u64 {
 #[derive(Debug)]
 enum Line {
     Command(Command),
-    Directory(String),
+    Directory,
     File(File),
 }
 
@@ -121,7 +121,7 @@ fn parse_command(input: &str) -> IResult<&str, Command> {
 fn parse_line(input: &str) -> IResult<&str, Line> {
     alt((
         map(parse_command, Line::Command),
-        map(parse_directory, Line::Directory),
+        map(parse_directory, |_s| Line::Directory),
         map(parse_file, Line::File),
     ))(input)
 }

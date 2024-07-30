@@ -1,14 +1,14 @@
-pub fn part1(input: &str) -> u32 {
+pub fn part1(input: &str) -> impl std::fmt::Display {
     input
         .lines()
         .map(|l| {
             10 * l.chars().find_map(|c| c.to_digit(10)).unwrap()
                 + l.chars().rev().find_map(|c| c.to_digit(10)).unwrap()
         })
-        .sum()
+        .sum::<u32>()
 }
 
-pub fn part2(input: &str) -> u32 {
+pub fn part2(input: &str) -> impl std::fmt::Display {
     input
         .lines()
         .map(|l| {
@@ -24,7 +24,7 @@ pub fn part2(input: &str) -> u32 {
                     % 9
                 + 1
         })
-        .sum()
+        .sum::<u32>()
 }
 
 const LUT: [&str; 18] = [
@@ -52,10 +52,10 @@ zoneight234
 
     #[test]
     fn part_1() {
-        assert_eq!(part1(INPUT1), 142);
+        assert_eq!(part1(INPUT1).to_string(), "142");
     }
     #[test]
     fn part_2() {
-        assert_eq!(part2(INPUT2), 281);
+        assert_eq!(part2(INPUT2).to_string(), "281");
     }
 }
