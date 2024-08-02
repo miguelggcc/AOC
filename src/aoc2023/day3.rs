@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 pub fn part1(input: &str) -> impl std::fmt::Display {
     let (nx, ny, grid) = parse(input);
     let mut total = 0;
@@ -26,7 +24,7 @@ pub fn part1(input: &str) -> impl std::fmt::Display {
 
 pub fn part2(input: &str) -> impl std::fmt::Display {
     let (nx, ny, grid) = parse(input);
-    let mut gears = HashMap::new();
+    let mut gears = vec![0; (nx * ny) as usize];
     let mut total = 0;
     let mut it = grid.clone().into_iter().enumerate();
 
@@ -45,10 +43,11 @@ pub fn part2(input: &str) -> impl std::fmt::Display {
             }
             gears_here.dedup();
             gears_here.into_iter().for_each(|ig| {
-                if let std::collections::hash_map::Entry::Occupied(o) = gears.entry(ig) {
-                    total += n * o.get();
+                let gear = &mut gears[ig as usize];
+                if *gear > 0 {
+                    total += n * *gear;
                 } else {
-                    gears.insert(ig, n);
+                    *gear = n;
                 }
             });
         }
