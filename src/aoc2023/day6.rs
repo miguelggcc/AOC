@@ -17,10 +17,10 @@ pub fn part2(input: &str) -> impl std::fmt::Display {
 }
 
 fn get_whole_numbers_parabole(t: f64, d: f64) -> u32 {
-    let discriminant = t * t - 4.0 * d;
-    let root1 = (t + discriminant.sqrt()) / 2.0;
-    let root2 = (t - discriminant.sqrt()) / 2.0;
-    
+    let discriminant = (t * t - 4.0 * d).sqrt();
+    let root1 = (t + discriminant) / 2.0;
+    let root2 = (t - discriminant) / 2.0;
+
     1 + (root1 - 0.51).round() as u32 - (root2 + 0.51).round().ceil() as u32
 }
 
