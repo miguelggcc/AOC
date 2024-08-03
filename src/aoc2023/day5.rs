@@ -22,7 +22,7 @@ pub fn part2(input: &str) -> impl std::fmt::Display {
     seeds
         .into_iter()
         .tuples()
-        .map(|(min, l)| find_min(min, min + l, &maps))
+        .map(|(low, l)| find_min(low, low + l, &maps))
         .min()
         .unwrap()
 }
