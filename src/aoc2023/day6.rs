@@ -21,7 +21,7 @@ fn get_whole_numbers_parabole(t: f64, d: f64) -> u32 {
     let root1 = (t + discriminant) / 2.0;
     let root2 = (t - discriminant) / 2.0;
 
-    1 + (root1 - 0.51).round() as u32 - (root2 + 0.51).round().ceil() as u32
+    root1.ceil() as u32 - root2 as u32 - 1
 }
 
 fn parse(line: &str) -> Vec<f64> {
