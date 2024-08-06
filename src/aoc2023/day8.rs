@@ -10,7 +10,7 @@ pub fn part1(input: &str) -> impl std::fmt::Display {
         let directions = dirs[..dirs.len() - 1].split_once(", ").unwrap();
         nodes.insert(node, directions);
     }
-    get_steps("AAA", |n| n == "ZZZ", &nodes, instructions).0
+    get_steps("AAA", |n| n == "ZZZ", &nodes, instructions)
 }
 
 pub fn part2(input: &str) -> impl std::fmt::Display {
@@ -23,21 +23,13 @@ pub fn part2(input: &str) -> impl std::fmt::Display {
         let directions = dirs[..dirs.len() - 1].split_once(", ").unwrap();
         nodes.insert(node, directions);
     }
-    //let mut node:Vec<&str> = nodes.keys().filter(|n|n.ends_with('A')).copied().collect();
     nodes
         .keys()
         .filter(|n| n.ends_with('A'))
         .copied()
         .fold(1, |acc, node| {
-            let (i0, nodez) = get_steps(node, |n| n.ends_with('Z'), &nodes, instructions.clone());
-            let repeating = get_steps(
-                nodez,
-                |n| n.ends_with('Z'),
-                &nodes,
-                instructions.clone().skip(i0),
-            )
-            .0 - i0;
-            lcm(acc, repeating)
+            let steps = get_steps(node, |n| n.ends_with('Z'), &nodes, instructions.clone());
+            lcm(acc, steps)
         })
 }
 
@@ -46,15 +38,15 @@ fn get_steps<'a>(
     end: impl Fn(&str) -> bool,
     nodes: &HashMap<&str, (&'a str, &'a str)>,
     instructions: impl Iterator<Item = (usize, char)>,
-) -> (usize, &'a str) {
+) -> usize {
     for (i, ins) in instructions {
+        if end(node) {
+            return i;
+        }
         node = match ins {
             'L' => nodes[node].0,
             _ => nodes[node].1,
         };
-        if end(node) {
-            return (i + 1, node);
-        }
     }
     unreachable!()
 }
