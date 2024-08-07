@@ -21,18 +21,17 @@ pub fn part2(input: &str) -> impl std::fmt::Display {
 
     let mut q = VecDeque::from([start as isize]);
     let mut is_loop = vec![false; grid.len()];
-    is_loop[start] = true;
     while let Some(p) = q.pop_front() {
         for new_pos in get_new_positions(p, &grid, nx, ny, &first_move) {
-            is_loop[new_pos as usize] = true;
             q.push_back(new_pos);
         }
+        is_loop[p as usize] = true;
         grid[p as usize] = '.';
     }
     is_loop
         .iter()
         .enumerate()
-        .filter(|(p, n)| !*n && is_in(*p, &is_loop, &gridi, 1 + nx as usize))
+        .filter(|(p, n)| !*n && is_inside(*p, &is_loop, &gridi, 1 + nx as usize))
         .count()
 }
 
@@ -69,7 +68,7 @@ fn get_new_positions<'a>(
     })
 }
 
-fn is_in(mut p: usize, is_loop: &[bool], grid: &[char], delta: usize) -> bool {
+fn is_inside(mut p: usize, is_loop: &[bool], grid: &[char], delta: usize) -> bool {
     let mut crosses = 0;
     while let Some(check_p) = is_loop.get(p) {
         if grid[p] == 'L' || grid[p] == '7' {
