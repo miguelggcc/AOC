@@ -58,7 +58,7 @@ pub fn part2(input: &str) -> impl std::fmt::Display {
 fn parse(input: &str) -> (isize, isize, Vec<char>) {
     let nx = input.lines().next().unwrap().len() as isize;
     let grid: Vec<_> = input.lines().flat_map(|l| l.chars()).collect();
-    (nx as isize, grid.len() as isize / nx, grid)
+    (nx, grid.len() as isize / nx, grid)
 }
 
 const MOVES: [(isize, isize); 8] = [

@@ -26,7 +26,6 @@ fn lagrange_extrapolation(new_x: i128, seq: Vec<i64>) -> i64 {
             let basis = (0..k)
                 .filter(|m| *m != j)
                 .fold((1, 1), |acc, m| (acc.0 * (new_x - m), acc.1 * (j - m)));
-            //dbg!(basis,basis.0 / basis.1);
             (basis.0 / basis.1) as i64 * y
         })
         .sum::<i64>()

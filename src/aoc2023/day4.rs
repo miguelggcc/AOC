@@ -35,7 +35,7 @@ pub fn part2(input: &str) -> impl std::fmt::Display {
             let matching = right
                 .split_ascii_whitespace()
                 .filter(|n| winning[n.parse::<usize>().unwrap()])
-                .count() as usize;
+                .count();
             let instances = copies[i];
             copies
                 .iter_mut()
