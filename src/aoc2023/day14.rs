@@ -9,6 +9,7 @@ pub fn part1(input: &str) -> impl std::fmt::Display {
 
 pub fn part2(input: &str) -> impl std::fmt::Display {
     let mut grid = Grid::parse(input);
+    let total_cycles = 1_000_000_000;
     let mut cache = HashMap::new();
     let mut key = 0;
     let mut loads = Vec::with_capacity(200);
@@ -30,8 +31,12 @@ pub fn part2(input: &str) -> impl std::fmt::Display {
             None
         })
         .unwrap();
-    loads[cycles0 + (1000000000 - cycles0) % (cycles - cycles0) - 1]
+    loads[cycles0 + (total_cycles - cycles0) % (cycles - cycles0) - 1]
 }
+
+const O: u8 = 2;
+const SQUARE: u8 = 1;
+const DOT: u8 = 0;
 
 struct Grid {
     grid: Vec<u8>,
@@ -45,9 +50,9 @@ impl Grid {
             .lines()
             .flat_map(|l| {
                 l.chars().map(|c| match c {
-                    'O' => 2,
-                    '#' => 1,
-                    _ => 0,
+                    'O' => O,
+                    '#' => SQUARE,
+                    _ => DOT,
                 })
             })
             .collect();
@@ -59,12 +64,13 @@ impl Grid {
             .flat_map(|s| {
                 s.iter()
                     .enumerate()
-                    .filter(|(_, &c)| c == 2)
+                    .filter(|(_, &c)| c == O)
                     .map(|(i, _)| 1 + i)
             })
             .sum()
     }
     fn rotate_clockwise(&mut self) {
+        //first transpose then reverse the rows
         for i in 0..self.n - 1 {
             for j in i + 1..self.n {
                 self.grid.swap(i + j * self.n, j + i * self.n)
@@ -72,11 +78,19 @@ impl Grid {
         }
         self.grid.chunks_mut(self.n).for_each(|s| s.reverse());
     }
-
     fn tilt(&mut self) {
-        self.grid
-            .chunks_mut(self.n)
-            .for_each(|row| row.split_mut(|&c| c == 1).for_each(|s| s.sort()))
+        self.grid.chunks_mut(self.n).for_each(|row| {
+            let mut acc = self.n - 1;
+            (0..self.n).rev().for_each(|i| {
+                let c = row[i];
+                if c == O {
+                    row.swap(i, acc);
+                    acc -= 1
+                } else if c == SQUARE {
+                    acc = i - 1
+                }
+            });
+        })
     }
 }
 
