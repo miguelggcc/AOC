@@ -16,11 +16,7 @@ pub fn part2(input: &str) -> impl std::fmt::Display {
         .lines()
         .map(|line| {
             let (left, right) = line.split_once(' ').unwrap();
-            let springs: Vec<_> = vec![left; 5]
-                .join("?")
-                .trim_end_matches('.')
-                .chars()
-                .collect();
+            let springs: Vec<_> = [left; 5].join("?").trim_end_matches('.').chars().collect();
             let groups = right
                 .split(',')
                 .map(|c| c.parse().unwrap())
