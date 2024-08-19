@@ -84,7 +84,6 @@ fn calculate_energized_cells(
                 if let Some(out_set) = out.as_mut() {
                     out_set.insert((x, y));
                 }
-
                 break;
             }
         }
