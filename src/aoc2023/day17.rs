@@ -8,29 +8,31 @@ pub fn part2(input: &str) -> impl std::fmt::Display {
     dijkstra(Grid::parse(input), 4, 10)
 }
 
-fn dijkstra(grid: Grid, min: usize, max: usize) -> u32 {
-    let mut distances = vec![u32::MAX; grid.data.len() * 4];
+const DIRS: [(isize, isize); 4] = [(0, -1), (1, 0), (0, 1), (-1, 0)];
+const ROTATIONS: [[usize; 2]; 4] = [[1, 3], [2, 0], [1, 3], [2, 0]];
 
-    let start = [State { i: 0, d: 0, dir: 1 }, State { i: 0, d: 0, dir: 2 }]; //, v: vec![] };
+fn dijkstra(grid: Grid, min: usize, max: usize) -> u32 {
+    let mut distances = vec![u32::MAX; grid.data.len() * 2];
+    let start = [State { i: 0, c: 0, dir: 1 }, State { i: 0, c: 0, dir: 2 }];
     let mut q = BinaryHeap::from(start);
 
     while let Some(state) = q.pop() {
         if state.i == grid.nx * grid.ny - 1 {
-            return state.d;
+            return state.c;
         }
-        if state.d > distances[state.to_key()] {
+        if state.c > distances[state.to_key()] {
             continue;
         }
         for new_dir in ROTATIONS[state.dir] {
             let mut new_state = state.clone();
+            new_state.dir = new_dir;
             for repeated in 1..=max {
-                if let Some((cost, new_i)) = grid.get_checked(new_state.i, MOVES[new_dir]) {
-                    new_state.d += cost;
+                if let Some((cost, new_i)) = grid.get_checked(new_state.i, DIRS[new_dir]) {
+                    new_state.c += cost;
                     new_state.i = new_i;
-                    new_state.dir = new_dir;
                     if repeated >= min {
-                        if distances[new_state.to_key()] > new_state.d {
-                            distances[new_state.to_key()] = new_state.d;
+                        if distances[new_state.to_key()] > new_state.c {
+                            distances[new_state.to_key()] = new_state.c;
                             q.push(new_state.clone())
                         }
                     }
@@ -42,22 +44,23 @@ fn dijkstra(grid: Grid, min: usize, max: usize) -> u32 {
     }
     panic!("path not found")
 }
+
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 struct State {
     i: isize,
-    d: u32,
+    c: u32,
     dir: usize,
 }
 
 impl State {
     fn to_key(&self) -> usize {
-        self.dir + self.i as usize * 4
+        self.dir % 2 + self.i as usize * 2 //only if the direction is vertical (0 and 2) or horizontal (1 and 3) matters
     }
 }
 
 impl Ord for State {
     fn cmp(&self, other: &Self) -> Ordering {
-        other.d.cmp(&self.d)
+        other.c.cmp(&self.c)
     }
 }
 
@@ -66,8 +69,6 @@ impl PartialOrd for State {
         Some(self.cmp(other))
     }
 }
-const MOVES: [(isize, isize); 4] = [(0, -1), (1, 0), (0, 1), (-1, 0)];
-const ROTATIONS: [[usize; 2]; 4] = [[1, 3], [0, 2], [1, 3], [0, 2]];
 
 struct Grid {
     data: Vec<u32>,
@@ -87,7 +88,8 @@ impl Grid {
     }
     fn get_checked(&self, i: isize, (dx, dy): (isize, isize)) -> Option<(&u32, isize)> {
         let new_i = i + dx + dy * self.nx;
-        if new_i >= 0 && i % self.nx + dx >= 0 && i % self.nx + dx < self.nx {
+        let x = i % self.nx + dx;
+        if new_i >= 0 && x >= 0 && x < self.nx {
             return self.data.get(new_i as usize).map(|c| (c, new_i));
         }
         None
