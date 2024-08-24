@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, collections::BinaryHeap, u32};
+use std::{cmp::Ordering, collections::BinaryHeap};
 
 pub fn part1(input: &str) -> impl std::fmt::Display {
     dijkstra(Grid::parse(input), 1, 3)
