@@ -24,17 +24,18 @@ fn dijkstra(grid: Grid, min: usize, max: usize) -> u32 {
             continue;
         }
         for new_dir in ROTATIONS[state.dir] {
-            let mut new_state = state.clone();
-            new_state.dir = new_dir;
+            let mut new_state = State {
+                i: state.i,
+                c: state.c,
+                dir: new_dir,
+            };
             for repeated in 1..=max {
                 if let Some((cost, new_i)) = grid.get_checked(new_state.i, DIRS[new_dir]) {
                     new_state.c += cost;
                     new_state.i = new_i;
-                    if repeated >= min {
-                        if distances[new_state.to_key()] > new_state.c {
-                            distances[new_state.to_key()] = new_state.c;
-                            q.push(new_state.clone())
-                        }
+                    if repeated >= min && distances[new_state.to_key()] > new_state.c {
+                        distances[new_state.to_key()] = new_state.c;
+                        q.push(new_state.clone())
                     }
                 } else {
                     break;
@@ -54,7 +55,8 @@ struct State {
 
 impl State {
     fn to_key(&self) -> usize {
-        self.dir % 2 + self.i as usize * 2 //only if the direction is vertical (0 and 2) or horizontal (1 and 3) matters
+        self.dir % 2 + self.i as usize * 2
+        //only matters if the direction is vertical (0 and 2) or horizontal (1 and 3)
     }
 }
 
