@@ -85,9 +85,9 @@ impl Grid {
                 let c = row[i];
                 if c == O {
                     row.swap(i, acc);
-                    acc -= 1
+                    acc = acc.saturating_sub(1)
                 } else if c == SQUARE {
-                    acc = i - 1
+                    acc = i.saturating_sub(1)
                 }
             });
         })

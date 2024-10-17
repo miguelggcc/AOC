@@ -59,7 +59,7 @@ fn parse_and_press_button_n_times(input: &str, n: usize, part2: bool) -> usize {
     let mut total_pulses = [n, 0];
     let mut cycles = HashMap::new();
     let mut q = VecDeque::new();
-    
+
     for button in 1..n + 1 {
         q.push_back((start, start, false));
         while let Some((i, old_i, pulse)) = q.pop_front() {

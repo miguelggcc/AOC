@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::{collections::VecDeque, isize};
 
 pub fn part1(input: &str) -> impl std::fmt::Display {
     let (nx, ny, mut grid, start, first_move) = parse(input);
@@ -90,7 +90,7 @@ fn parse(input: &str) -> (isize, isize, Vec<char>, usize, Vec<(isize, isize)>) {
         .into_iter()
         .zip(ALLOWED)
         .filter_map(|((dx, dy), a)| {
-            let pos = start + (dx + dy * nx) as usize;
+            let pos = start + (dx + dy * nx).rem_euclid(isize::MAX) as usize;
             grid.get(pos).filter(|&&c| a.contains(c)).map(|_| (dx, dy))
         })
         .collect();
