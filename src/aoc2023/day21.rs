@@ -1,46 +1,80 @@
 use std::collections::VecDeque;
 
 pub fn part1(input: &str) -> impl std::fmt::Display {
-    let nx = input.lines().next().unwrap().len() as isize;
-    let grid: Vec<_> = input.lines().flat_map(|l| l.chars()).collect();
-    let start = grid.iter().position(|&c| c == 'S').unwrap() as isize;
-    let ny = grid.len() as isize / nx;
-    let mut q = VecDeque::from([(start, 0)]);
-    let n: isize = 6;
-    let mut cache = vec![false; grid.len() * (n + 1) as usize];
+   let grid = Grid::parse(input,1);
+   calculate_steps(&grid, 64)
+}
+
+pub fn part2(input: &str) -> impl std::fmt::Display {
+    let grid = Grid::parse(input,5);
+    dbg!(grid.grid[grid.start as usize]);
+    let seq = (0..3).map(|i|calculate_steps(&grid, 131*i+65) as i64).collect();
+    lagrange_extrapolation((26501365-65)/131, seq)
+}
+
+const DIRS: [(isize, isize); 4] = [(0, -1), (1, 0), (0, 1), (-1, 0)];
+
+fn neighbours(grid: &Grid, i: isize) -> impl Iterator<Item = isize> + '_ {
+    DIRS.iter().filter_map(move |(dx, dy)| {
+        let x = i % grid.n + dx;
+        let y = i / grid.n + dy;
+        if x >= 0 && x < grid.n && y >= 0 && y < grid.n && grid.get(x, y) != '#' {
+            return Some(x + grid.n * y);
+        }
+        None
+    })
+}
+
+fn calculate_steps(grid: &Grid, total_steps: isize)->usize{
+    let mut q = VecDeque::from([(grid.start, 0)]);
+    let mut cache = vec![false; grid.grid.len() * (total_steps + 1) as usize];
     let mut total = 0;
 
     while let Some((i, steps)) = q.pop_front() {
-        if cache[(i * (n + 1) + steps) as usize] {
+        if cache[(i * (total_steps + 1) + steps) as usize] {
             continue;
         }
-        cache[(i * (n + 1) + steps) as usize] = true;
-        if steps == n {
+        cache[(i * (total_steps + 1) + steps) as usize] = true;
+        if steps == total_steps {
             total += 1;
             continue;
         }
-        for new_i in neighbours(&grid, i, nx, ny) {
+        for new_i in neighbours(&grid, i) {
             q.push_back((new_i, steps + 1))
         }
     }
     total
 }
 
-pub fn part2(_input: &str) -> impl std::fmt::Display {
-    "Not implemented"
+struct Grid{
+    grid: Vec<char>,
+    n:isize,
+    start: isize
 }
 
-const DIRS: [(isize, isize); 4] = [(0, -1), (1, 0), (0, 1), (-1, 0)];
+impl Grid{
+    fn parse(input: &str, times: isize)->Self{
+        let n = input.lines().next().unwrap().len() as isize;
+        let grid: Vec<char> = input.lines().flat_map(|l|  std::iter::repeat(l.chars()).take(times as usize).flatten()).collect();
+        let start = (grid.iter().position(|&c| c == 'S').unwrap() )as isize+times as isize/2*n+times as isize/2*n*n*times;
+        Self{grid: grid.repeat(times as usize),n:n*times,start}
+    }
+    fn get(&self, x:isize,y:isize)->char{
+        self.grid[(x + y * self.n) as usize]
+    }
+}
 
-fn neighbours(grid: &[char], i: isize, nx: isize, ny: isize) -> impl Iterator<Item = isize> + '_ {
-    DIRS.iter().filter_map(move |(dx, dy)| {
-        let x = i % nx + dx;
-        let y = i / nx + dy;
-        if x >= 0 && x < nx && y >= 0 && y < ny && grid[(x + y * nx) as usize] != '#' {
-            return Some(x + ny * y);
-        }
-        None
-    })
+fn lagrange_extrapolation(new_x: i128, seq: Vec<i64>) -> i64 {
+    let k = seq.len() as i128;
+    (0..k)
+        .zip(seq)
+        .map(|(j, y)| {
+            let basis = (0..k)
+                .filter(|m| *m != j)
+                .fold((1, 1), |acc, m| (acc.0 * (new_x - m), acc.1 * (j - m)));
+            (basis.0 / basis.1) as i64 * y
+        })
+        .sum::<i64>()
 }
 
 #[cfg(test)]
@@ -62,7 +96,8 @@ mod day21 {
 
     #[test]
     fn part_1() {
-        assert_eq!(part1(INPUT).to_string(), "16");
+        let grid = Grid::parse(INPUT,1);
+        assert_eq!(calculate_steps(&grid, 6).to_string(), "16");
     }
     #[test]
     #[ignore]

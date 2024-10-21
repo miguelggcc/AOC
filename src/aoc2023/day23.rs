@@ -1,107 +1,93 @@
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::VecDeque;
 
 pub fn part1(input: &str) -> impl std::fmt::Display {
-    let (graph, nodes, start, end) = parse(input, false);
-    let mut q = VecDeque::from([(start, 0, 0u128)]);
-    let mut total = 0;
-    dbg!(&graph.len(), nodes.len());
-    while let Some((i, d, mut seen)) = q.pop_front() {
-        if i == end {
-            total = total.max(d);
-            dbg!(total);
-            continue;
-        }
-        seen |= 1 << i;
-        for &(new_i, new_d) in graph[i].iter() {
-            if (seen >> new_i) & 1 == 0 {
-                q.push_back((new_i, d + new_d, seen))
-            }
-        }
-    }
-    total
+    let nodes = parse(input, false);
+    get_max(nodes)
 }
 
 pub fn part2(input: &str) -> impl std::fmt::Display {
-    let (graph, nodes, start, end) = parse(input, true);
-    let mut q = VecDeque::from([(start, 0, 0u128)]);
-    let mut total = 0;
-    dbg!(&graph.len(), nodes.len());
-    while let Some((i, d, mut seen)) = q.pop_front() {
-        if i == end {
-            total = total.max(d);
-            continue;
-        }
-        seen |= 1 << i;
-        for &(new_i, new_d) in graph[i].iter() {
-            if (seen >> new_i) & 1 == 0 {
-                q.push_back((new_i, d + new_d, seen))
-            }
-        }
-    }
-    total
-}
-
-fn parse(input: &str, part2: bool) -> (Vec<Vec<(usize, usize)>>, Vec<usize>, usize, usize) {
-    let nx = input.lines().next().unwrap().len() as isize;
-    let grid: Vec<_> = input.lines().flat_map(|l| l.chars()).collect();
-    let ny = grid.len() as isize / nx;
-    let mut neighbours: Vec<_> = grid
-        .iter()
-        .enumerate()
-        .map(|(i, c)| {
-            match c {
-                '#' => &[],
-                _ if part2 => DIRS.as_slice(),
-                '.' => DIRS.as_slice(),
-                _ => &DIRS[SLOPES.iter().position(|s| s == c).unwrap()..][..1],
-            }
-            .iter()
-            .filter_map(|(dx, dy)| {
-                let x = i as isize % nx + dx;
-                let y = i as isize / nx + dy;
-                let neighbour = grid.get((x + y * nx) as usize);
-                if neighbour.is_some_and(|&c| c != '#') {
-                    return Some(((x + y * nx) as usize, 1));
-                }
-                None
-            })
-            .collect::<Vec<(usize, usize)>>()
-        })
-        .collect();
-    let mut nodes = vec![1];
-    for i in 2..neighbours.len() - 2 {
-        let corridor = neighbours[i].clone();
-        if corridor.len() == 2 {
-            corridor
-                .iter()
-                .zip(corridor.iter().rev())
-                .for_each(|(&(i1, d1), &(i2, d2))| {
-                    if let Some(new_n) = neighbours[i1].iter_mut().find(|(ii, _)| *ii == i) {
-                        *new_n = (i2, d1 + d2)
-                    }
-                });
-        } else if corridor.len() > 0 {
-            nodes.push(i);
-        }
-    }
-    nodes.push((nx * ny - 2) as usize);
-    neighbours.retain_mut(|n| {
-        if n.len() > 0 && n.len() != 2 {
-            n.iter_mut()
-                .for_each(|(ii, _)| *ii = nodes.binary_search(&ii).unwrap());
-            return true;
-        }
-        false
-    });
-    let end: usize = nodes.len() - 1;
-    (neighbours, nodes, 0, end)
+    let nodes = parse(input, true);
+    get_max(nodes)
 }
 
 const DIRS: [(isize, isize); 4] = [(0, -1), (1, 0), (0, 1), (-1, 0)];
 const SLOPES: [char; 4] = ['^', '>', 'v', '<'];
 
+fn get_max(nodes: Vec<Vec<(usize, u16)>>) -> impl std::fmt::Display {
+    let mut q = VecDeque::from([(0, 0u16, 0u64)]);
+    let mut total = 0;
+    while let Some((i, d, mut seen)) = q.pop_front() {
+        if nodes[i].is_empty() {
+            total = total.max(d);
+            continue;
+        }
+        seen |= 1 << i;
+        for &(new_i, new_d) in nodes[i].iter() {
+            if (seen >> new_i) & 1 == 0 {
+                q.push_back((new_i, d + new_d, seen))
+            }
+        }
+    }
+    total
+}
+
+fn parse(input: &str, part2: bool) -> Vec<Vec<(usize, u16)>> {
+    let nx = input.lines().next().unwrap().len() as isize;
+    let grid: Vec<_> = input.lines().flat_map(|l| l.chars()).collect();
+    let mut visited = vec![None; grid.len()];
+    let ny = grid.len() as isize / nx;
+    let mut nodes = vec![vec![]];
+    let mut q = VecDeque::from([(1, 2, 0, 0)]);
+
+    while let Some((i, dir, d, last_node)) = q.pop_front() {
+        if i == nx * ny - 2 {
+            nodes.push(vec![]);
+            let this_node = nodes.len() - 1;
+            nodes[last_node].push((this_node, d));
+            continue;
+        }
+        let neighbours = DIRS
+            .iter()
+            .enumerate()
+            .filter_map(|(i_dir, (dx, dy))| {
+                let new_i = i + dx + nx * (dy);
+                match grid.get(new_i as usize) {
+                    None => None,
+                    _ if i_dir == (dir + 2) % 4 => None,
+                    Some('#') => None,
+                    _ if part2 => Some((new_i, i_dir)),
+                    Some('.') => Some((new_i, i_dir)),
+                    Some(c) if SLOPES.iter().position(|s| s == c).unwrap() == i_dir => {
+                        Some((new_i, i_dir))
+                    }
+                    _ => None,
+                }
+            })
+            .collect::<Vec<_>>();
+
+        if neighbours.len() == 1 {
+            q.push_back((neighbours[0].0, neighbours[0].1, d + 1, last_node));
+        } else if !neighbours.is_empty() {
+            if let Some(this_node) = visited[i as usize] {
+                nodes[last_node].push((this_node, d));
+            } else {
+                let this_node = nodes.len();
+                nodes[last_node].push((this_node, d));
+                nodes.push(vec![]);
+                for (new_i, new_dir) in neighbours {
+                    q.push_back((new_i, new_dir, 1, this_node));
+                }
+                let (dx, dy) = DIRS[(dir + 2) % 4];
+                q.push_back((i + dx + nx * dy, (dir + 2) % 4, 1, this_node));
+                visited[i as usize] = Some(this_node);
+            }
+        }
+    }
+    nodes
+}
+
 #[cfg(test)]
-mod day22 {
+mod day23 {
 
     use super::*;
 
