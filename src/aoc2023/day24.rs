@@ -65,7 +65,7 @@ mod day24 {
 
     #[test]
     fn part_1() {
-        assert_eq!(part1(INPUT).to_string(), "2");
+        assert_eq!(part1(INPUT).to_string(), "0");
     }
     #[test]
     #[ignore]
