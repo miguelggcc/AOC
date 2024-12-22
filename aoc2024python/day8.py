@@ -2,12 +2,12 @@ from itertools import combinations
 from math import gcd
 
 def parse(input):
-    antennas = {}
     data = input.strip().splitlines()
     nx, ny = len(data), len(data[0])
+    antennas = {}
     for y, row in enumerate(data):
         for x, cell in enumerate(row):
-            if cell != '.':
+            if cell is not '.':
                 antennas.setdefault(cell, []).append(x+1j*y)
     return antennas, nx, ny
 
@@ -38,5 +38,4 @@ class Day8:
                     while 0 <= antinode.real < nx and 0 <= antinode.imag < ny:
                         antinodes.add(antinode)
                         antinode += step
-
         return len(antinodes)
