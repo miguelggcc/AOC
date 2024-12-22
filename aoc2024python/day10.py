@@ -1,5 +1,6 @@
 from collections import deque
 
+
 def parse(input):
     data = input.splitlines()
     nx, ny = len(data), len(data[0])
@@ -23,7 +24,6 @@ def dfs(x0, part2, grid):
             for dx in [1, 1j, -1, -1j]:
                 if grid.get(x+dx, 0) == v+1:
                     q.append((x+dx, v+1))
-
     return count
 
 
