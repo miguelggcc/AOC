@@ -11,6 +11,8 @@ from day7 import Day7
 from day8 import Day8
 from day9 import Day9
 from day10 import Day10
+from day11 import Day11
+
 
 # Add more day functions as needed
 def read_input_file(day: int, year: int) -> str:
@@ -39,7 +41,8 @@ def main(year):
         7:Day7,
         8:Day8,
         9:Day9,
-        10:Day10
+        10:Day10,
+        11:Day11
         # Add more days here
     }
 
