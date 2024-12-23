@@ -1,5 +1,4 @@
 from collections import deque
-from itertools import combinations
 
 dirs = [-1, -1j, 1, 1j]
 
