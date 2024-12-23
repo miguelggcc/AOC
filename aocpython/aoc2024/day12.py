@@ -17,15 +17,15 @@ def get_corners(x, region):
 
 
 def floodfill(grid, x0, id, part1):
-    q = deque([x0])
+    q = [x0]
     region = {x0}
     per = 0
 
     while q:
-        x = q.popleft()
+        x = q.pop()
         for dx in dirs:
             new_x = x+dx
-            if grid.get(new_x, ' ') == id:
+            if grid.get(new_x) == id:
                 del grid[new_x]
                 region.add(new_x)
                 q.append(new_x)

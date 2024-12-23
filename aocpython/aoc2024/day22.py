@@ -1,4 +1,4 @@
-class Day13:
+class Day22:
     def part1(input):
         return "Not implemented"
 
