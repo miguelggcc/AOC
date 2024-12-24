@@ -1,6 +1,6 @@
 from collections import deque
 
-dirs = [-1, -1j, 1, 1j]
+DIRS = [-1, -1j, 1, 1j]
 
 
 def parse(input):
@@ -11,9 +11,9 @@ def parse(input):
 
 def get_corners(x, region):
     return sum(int(x+dx1 not in region and x+dx2 not in region)
-               + int(x+dx1 in region and x +
-                     dx2 in region and x+dx1+dx2 not in region)
-               for dx1, dx2 in zip(dirs, dirs[1:]+dirs[:1]))
+               + int(x+dx1+dx2 not in region and x+dx1 in region and x +
+                     dx2 in region)
+               for dx1, dx2 in zip(DIRS, DIRS[1:]+DIRS[:1]))
 
 
 def floodfill(grid, x0, id, part1):
@@ -23,7 +23,7 @@ def floodfill(grid, x0, id, part1):
 
     while q:
         x = q.pop()
-        for dx in dirs:
+        for dx in DIRS:
             new_x = x+dx
             if grid.get(new_x) == id:
                 del grid[new_x]

@@ -20,7 +20,7 @@ def read_input_file(day: int, year: int) -> str:
     
 def main(year):
     # Dispatch table
-    tasks = {i: globals()[f"Day{i}"] for i in range(1, 13)}
+    tasks = {i: globals()[f"Day{i}"] for i in range(1, 26)}
 
 
     if len(sys.argv) != 2:
