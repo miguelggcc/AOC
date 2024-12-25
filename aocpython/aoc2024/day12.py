@@ -29,7 +29,7 @@ def floodfill(grid, x0, id, part1):
                 del grid[new_x]
                 region.add(new_x)
                 q.append(new_x)
-            else:
+            elif part1:
                 per += new_x not in region
 
     if part1:
