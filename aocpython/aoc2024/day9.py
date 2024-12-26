@@ -44,16 +44,27 @@ class Day9:
 
     def part2(input):
         files = [(i, int(n))for i, n in enumerate(input[::2])]
-        free = [*map(int, input[1::2])]
+        free = [(i, int(n))
+                for i, n in enumerate(input[1::2]) if n is not '0']
+        spaces = [[] for i in range(9)]
+        
+        for i, space in reversed(free):
+            spaces[space-1].append(i)
         i_s = [0]+list(accumulate(map(int, input)))
         out = 0
 
         for id, n in reversed(files):
-            fit = next((i for i, x in enumerate(free[:id]) if x >= n), None)
-            if fit is not None:
+            possible_spaces = [(i, space[-1])
+                               for i, space in enumerate(spaces[n-1:]) if space]
+            space = min(possible_spaces, key=lambda x: x[1])[
+                0]+n if possible_spaces else None
+            if space is not None and spaces[space-1][-1] < id:
+                fit = spaces[space-1].pop()
                 out += checksum(id, i_s[fit*2+1], n)
-                free[fit] -= n
-                i_s[fit*2+1] += n
+                if space > n:
+                    spaces[space-n-1].append(fit)
+                    spaces[space-n-1].sort(reverse=True)
+                    i_s[fit*2+1] += n
             else:
                 out += checksum(id, i_s[id*2], n)
 
