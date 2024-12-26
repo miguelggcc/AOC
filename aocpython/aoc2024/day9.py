@@ -46,8 +46,8 @@ class Day9:
         files = [(i, int(n))for i, n in enumerate(input[::2])]
         free = [(i, int(n))
                 for i, n in enumerate(input[1::2]) if n is not '0']
-        spaces = [[] for i in range(9)]
         
+        spaces = [[] for i in range(9)]
         for i, space in reversed(free):
             spaces[space-1].append(i)
         i_s = [0]+list(accumulate(map(int, input)))
