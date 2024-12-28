@@ -36,7 +36,7 @@ class Day15:
         for yy, row in enumerate(data):
             for xx, cell in enumerate(row):
                 if cell == '@':
-                    x0 = 2*xx+yy*1j
+                    x = 2*xx+yy*1j
                 elif cell == 'O':
                     grid[2*xx+yy*1j] = 1  # left part of box, points to right
                     # right part of box, points to left
@@ -46,34 +46,34 @@ class Day15:
                     grid[2*xx+yy*1j+1] = 0
 
         q = deque()
-        branch = {}
+        sub_boxes = {}
 
         for d in m.replace('\n', ''):
             dir = dirs[d]
-            if x0+dir not in grid:
-                x0 += dir
+            if x+dir not in grid:
+                x += dir
                 continue
 
-            q.append(x0+dir)
+            q.append(x+dir)
 
             while q:
-                x = q.popleft()
-                if x in grid:
-                    if grid[x] == 0:
+                p = q.popleft()
+                if p in grid:
+                    if grid[p] == 0:
                         q.clear()
-                        branch.clear()
+                        sub_boxes.clear()
                         break
-                    branch[x] = grid[x]
-                    for b in [x+grid[x], x+dir]:
-                        if b not in branch:
+                    sub_boxes[p] = grid[p]
+                    for b in [p+grid[p], p+dir]:
+                        if b not in sub_boxes:
                             q.append(b)
 
-            if branch:
-                x0 += dir
-                for b, v in branch.items():
+            if sub_boxes:
+                x += dir
+                for b in sub_boxes.keys():
                     grid.pop(b)
-                for b, v in branch.items():
+                for b, v in sub_boxes.items():
                     grid[b+dir] = v
-            branch.clear()
+                sub_boxes.clear()
 
         return sum(int(b.real+100*b.imag) for b, cell in grid.items() if cell == 1)
