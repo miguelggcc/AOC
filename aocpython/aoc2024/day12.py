@@ -1,5 +1,3 @@
-from collections import deque
-
 DIRS = [-1, -1j, 1, 1j]
 
 

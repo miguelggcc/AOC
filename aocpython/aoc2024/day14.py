@@ -1,6 +1,5 @@
 from functools import reduce
 from operator import mul
-import numpy as np
 
 
 def parse(input):
