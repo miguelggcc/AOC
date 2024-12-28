@@ -1,18 +1,5 @@
 from collections import deque
 
-
-def parse(input):
-    grid = {}
-    data = input.strip().splitlines()
-    for y, row in enumerate(data):
-        for x, cell in enumerate(row):
-            if cell == '@':
-                x0 = x+y*1j
-            elif cell != '.':
-                grid[x+y*1j] = cell
-    return grid, x0
-
-
 dirs = {'^': -1j, '>': 1, '<': -1, 'v': 1j}
 
 
@@ -51,8 +38,9 @@ class Day15:
                 if cell == '@':
                     x0 = 2*xx+yy*1j
                 elif cell == 'O':
-                    grid[2*xx+yy*1j] = 1 #left part of box, points to right
-                    grid[2*xx+yy*1j+1] = -1 #right part of box, points to left
+                    grid[2*xx+yy*1j] = 1  # left part of box, points to right
+                    # right part of box, points to left
+                    grid[2*xx+yy*1j+1] = -1
                 elif cell == '#':
                     grid[2*xx+yy*1j] = 0
                     grid[2*xx+yy*1j+1] = 0
