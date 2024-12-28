@@ -1,6 +1,6 @@
 from collections import deque
 
-dirs = {'^': -1j, '>': 1, '<': -1, 'v': 1j}
+DIRS = {'^': -1j, '>': 1, '<': -1, 'v': 1j}
 
 
 class Day15:
@@ -16,7 +16,7 @@ class Day15:
                     grid[xx+yy*1j] = cell
 
         for d in m.replace('\n', ''):
-            dir = dirs[d]
+            dir = DIRS[d]
             p = x+dir
             while grid.get(p, None) == 'O':
                 p += dir
@@ -49,7 +49,7 @@ class Day15:
         sub_boxes = {}
 
         for d in m.replace('\n', ''):
-            dir = dirs[d]
+            dir = DIRS[d]
             if x+dir not in grid:
                 x += dir
                 continue
