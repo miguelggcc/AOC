@@ -53,7 +53,7 @@ class Day16:
         maze, start, end = parse(input)
         min = dijkstra(maze, start, end, True)
 
-        q = [(end, maze[end][d], d) for d in range(4) if maze[end][d] == min]
+        q = [(end, min, d) for d in range(4) if maze[end][d] == min]
         tiles = set()
         
         while q:
