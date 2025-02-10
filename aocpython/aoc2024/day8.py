@@ -7,7 +7,7 @@ def parse(input):
     antennas = {}
     for y, row in enumerate(data):
         for x, cell in enumerate(row):
-            if cell is not '.':
+            if cell != '.':
                 antennas.setdefault(cell, []).append(x+1j*y)
     return antennas, nx, ny
 
