@@ -1,4 +1,3 @@
-from collections import deque
 
 
 DIRS = [-1, -1j, 1, 1j]
@@ -17,32 +16,30 @@ def parse(input):
     return maze, end
 
 
-def floodfill(x0, maze):
+def generate_path(x0, maze):
     distances = []
     q = [(x0, 0)]
     while q:
         x, pico = q.pop()
-        if x not in maze:
-            continue
         maze.remove(x)
         distances.append(x)
         for dx in DIRS:
             new_x = x+dx
-            if new_x in maze and new_x:
+            if new_x in maze:
                 q.append((new_x, pico+1))
-    
+
     return distances
 
 
 def calculate_cheat(input, d):
     maze, end = parse(input)
-    cells = floodfill(end, maze)
+    cells = generate_path(end, maze)
     ans = 0
-    for d1, cell in enumerate(cells[:-102]):
+    for d1, cell1 in enumerate(cells[:-102]):
         d2 = d1+102
         while d2 < len(cells):
             cell2 = cells[d2]
-            man_d = int(abs(cell.real-cell2.real) + abs(cell.imag-cell2.imag))
+            man_d = int(abs(cell1.real-cell2.real) + abs(cell1.imag-cell2.imag))
             if man_d > d:
                 d2 += man_d - d-1
             elif d2-d1-man_d >= 100:
