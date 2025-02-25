@@ -31,14 +31,15 @@ def generate_path(maze, x0):
     return path
 
 
-def calculate_cheat(maze,end, d):
-    path = generate_path(maze,end)
+def calculate_cheat(maze, end, d):
+    path = generate_path(maze, end)
     ans = 0
     for d1, cell1 in enumerate(path[:-102]):
         d2 = d1+102
         while d2 < len(path):
             cell2 = path[d2]
-            man_d = int(abs(cell1.real-cell2.real) + abs(cell1.imag-cell2.imag))
+            man_d = int(abs(cell1.real-cell2.real) +
+                        abs(cell1.imag-cell2.imag))
             if man_d > d:
                 d2 += man_d - d-1
             elif d2-d1-man_d >= 100:
