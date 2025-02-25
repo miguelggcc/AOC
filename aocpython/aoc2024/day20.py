@@ -6,18 +6,15 @@ DIRS = [-1, -1j, 1, 1j]
 
 def parse(input):
     data = input.strip().splitlines()
-    nx, ny = len(data[0]), len(data)
     maze = set()
     for y, row in enumerate(data):
         for x, cell in enumerate(row):
             if cell == '#':
                 maze.add(x+y*1j)
-            if cell == 'S':
-                start = x+y*1j
             elif cell == 'E':
                 end = x+y*1j
 
-    return maze, start, end, nx, ny
+    return maze, end
 
 
 def floodfill(x0, maze):
@@ -34,23 +31,23 @@ def floodfill(x0, maze):
                 q.append((new_x, pico+1))
     return distances
 
+
+def calculate_cheat(input, d):
+    maze, end = parse(input)
+    cells = floodfill(end, maze)
+    ans = 0
+    for cell in cells.keys():
+        for dx in range(-d-2, d+2):
+            for dy in range(-d+abs(dx), d+1-abs(dx)):
+                if (abs(dx) > 1 or abs(dy) > 1) and cell+dx+dy*1j in cells and cells[cell]-cells[cell+dx+dy*1j]-abs(dx)-abs(dy) >= 100:
+                    ans += 1
+
+    return ans
+
+
 class Day20:
     def part1(input):
-        maze, start, end, nx, ny = parse(input)
-        e = floodfill(end, maze)
-        s = floodfill(start, maze)
-        baseline = s[end]
-        ans = 0
-        for wall in maze:
-            for d in range(4):
-                borders = [s.get(wall + DIRS[d],1e9),
-                           e.get(wall + DIRS[(d+2) % 4],1e9)]
-
-                new_distance = borders[0]+borders[1]+2
-                if baseline-new_distance>=100:
-                        ans+=1
-
-        return ans
+        return calculate_cheat(input, 2)
 
     def part2(input):
-        return "Not implemented"
+        return calculate_cheat(input, 20)
